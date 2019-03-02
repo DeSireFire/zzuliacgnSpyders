@@ -13,11 +13,23 @@ re_size = '<li>文件大小:<span>([\s\S]*?)</span></li>'
 re_info = '<strong>簡介:&nbsp;</strong>([\s\S]*?)<a name="description-end"></a>'
 re_magnet1 = '<aclass="magnet"id="a_magnet"href="([\s\S]*?)">([\s\S]*?)</a>'
 re_magnet2 = '<aid="magnet2"href="([\s\S]*?)">([\s\S]*?)</a>'
-
+re_uper = '<tdalign="center"><ahref="([\s\S]*?)">([\s\S]*?)</a></td>'
+re_UDO_DATA = '<tdnowrap="nowrap"align="center"><spanclass="btl_1">([\s\S]*?)</span></td><tdnowrap="nowrap"align="center"><spanclass="bts_1">([\s\S]*?)</span></td><tdnowrap="nowrap"align="center">([\s\S]*?)</td><tdalign="center"><ahref="([\s\S]*?)">([\s\S]*?)</a></td>'
+# re_UDO_DATA = '<tdnowrap="nowrap"align="center"><spanclass="btl_1">([\s\S]*?)</span></td><tdnowrap="nowrap"align="center"><spanclass="bts_1">([\s\S]*?)</span></td><tdnowrap="nowrap"align="center">([\s\S]*?)</td>'
 
 
 
 _header = {
+    # ':authority':'www.dmhy.org',
+    # ':path':'/',
+    # ':scheme':'https',
+    # 'accept':'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8',
+    # 'accept-encoding':'gzip, deflate, br',
+    # 'accept-language':'zh-CN,zh;q=0.9,en;q=0.8',
+    # 'cache-control':'max-age=0',
+    # 'if-modified-since':'Sat, 02 Mar 2019 15:18:33 GMT',
+    # 'upgrade-insecure-requests':'1',
+    # 'user-agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/69.0.3497.100 Safari/537.36',
     'Referer':'https://share.dmhy.org/topics/list/sort_id/31/page/1',
     'User-Agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/69.0.3497.100 Safari/537.36',
 }
@@ -77,6 +89,13 @@ def getDMHY_types(_str):
     return types[_str]
 
 def HtmlDownloader(URL,_header):
+    P = {
+        "http": "http://127.0.0.1:1080",
+        "https": "http://127.0.0.1:1080",
+        # "https":"https://106.60.44.145:80",
+
+    }
+    # _respone = requests.get(url=URL, headers=_header,proxies=P)
     _respone = requests.get(url=URL, headers=_header)
     return _respone.text
 
@@ -99,18 +118,18 @@ def main_DMHY():
     a_i_u_e_o = HtmlDownloader(URL,_header)
     ha_hi_fu_he_ho = list(map(lambda x:getDMHY_types('viewInfoURL')+x,re_DMHY(a_i_u_e_o,re_infoURL)))
     sa_shi_su_se_so = re_DMHY(a_i_u_e_o,re_type)
-    for ma_mi_mu_me_mo,na_ni_nu_ne_no in zip(ha_hi_fu_he_ho,sa_shi_su_se_so):
-        ya_yu_yo = HtmlDownloader(ma_mi_mu_me_mo, _header)
+    upers = re_DMHY(a_i_u_e_o, re_UDO_DATA)
+    for ma_mi_mu_me_mo, na_ni_nu_ne_no,UDO in zip(ha_hi_fu_he_ho, sa_shi_su_se_so,upers):
         rec_dict = {
             '类别': getDMHY_types(na_ni_nu_ne_no),
-            '标题':re_DMHY(ya_yu_yo, re_title)[0],
-            '发布时间':re_DMHY(ya_yu_yo, re_time)[0],
-            '文件大小':re_DMHY(ya_yu_yo, re_size),
-            'Magnet連接':list(re_DMHY(ya_yu_yo, re_magnet1)[0]),
-            'Magnet連接typeII':list(re_DMHY(ya_yu_yo, re_magnet2)[0]),
-            '简介':r'<div>\r\n'+re_DMHY(ya_yu_yo, re_info,False)[0],
-            '详情URL':ma_mi_mu_me_mo,
-
+            '标题': '',
+            '发布时间': '',
+            '文件大小': '',
+            'Magnet連接': '',
+            'Magnet連接typeII': '',
+            '简介': r'<div>\r\n' + '',
+            '详情URL': ma_mi_mu_me_mo,
+            'test': UDO,
         }
         print(rec_dict)
 

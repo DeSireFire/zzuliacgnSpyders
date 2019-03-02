@@ -19,7 +19,8 @@ class DmhySpider(scrapy.Spider):
     re_info = '<strong>簡介:&nbsp;</strong>([\s\S]*?)<a name="description-end"></a>'
     re_magnet1 = '<aclass="magnet"id="a_magnet"href="([\s\S]*?)">([\s\S]*?)</a>'
     re_magnet2 = '<aid="magnet2"href="([\s\S]*?)">([\s\S]*?)</a>'
-
+    # re_uper = '<tdalign="center"><ahref="([\s\S]*?)">([\s\S]*?)</a></td>'
+    re_UDO_DATA = '<tdnowrap="nowrap"align="center"><spanclass="btl_1">([\s\S]*?)</span></td><tdnowrap="nowrap"align="center"><spanclass="bts_1">([\s\S]*?)</span></td><tdnowrap="nowrap"align="center">([\s\S]*?)</td><tdalign="center"><ahref="([\s\S]*?)">([\s\S]*?)</a></td>'
     # 该爬虫所用的数据库信息
     custom_settings = dmhy
 
@@ -27,7 +28,9 @@ class DmhySpider(scrapy.Spider):
         a_i_u_e_o = response.text
         ha_hi_fu_he_ho = list(map(lambda x: self.getDMHY_types('viewInfoURL') + x, self.re_DMHY(a_i_u_e_o, self.re_infoURL)))
         sa_shi_su_se_so = self.re_DMHY(a_i_u_e_o, self.re_type)
-        for ma_mi_mu_me_mo, na_ni_nu_ne_no in zip(ha_hi_fu_he_ho, sa_shi_su_se_so):
+        # upers = self.re_DMHY(a_i_u_e_o, self.re_uper)
+        UDOs = self.re_DMHY(a_i_u_e_o, self.re_UDO_DATA)
+        for ma_mi_mu_me_mo, na_ni_nu_ne_no, re_UDO in zip(ha_hi_fu_he_ho, sa_shi_su_se_so,UDOs):
             rec_dict = {
                 '类别': self.getDMHY_types(na_ni_nu_ne_no),
                 '标题': '',
@@ -37,6 +40,10 @@ class DmhySpider(scrapy.Spider):
                 'Magnet連接typeII': '',
                 '简介': r'<div>\r\n' + '',
                 '详情URL': ma_mi_mu_me_mo,
+                '资源发布者': re_UDO[4],
+                '资源上传数': re_UDO[0],
+                '资源下载数': re_UDO[1],
+                '资源完成数': re_UDO[2],
             }
             yield scrapy.Request(url=rec_dict["详情URL"], callback=self.infoView, meta={"item": rec_dict})
         _next = response.css('.nav_title .fl a::attr("href")').extract()
@@ -78,15 +85,16 @@ class DmhySpider(scrapy.Spider):
         item['rdName'] = z['标题']
         item['rdUpTime'] = z['发布时间']
         item['rdSize'] = z['文件大小']
-        item['rdUpNum'] = z['文件大小']
-        item['rdDownloadNum'] = z['文件大小']
+        item['rdUpNum'] = z['资源上传数']
+        item['rdDownloadNum'] = z['资源下载数']
         item['rdInfo'] = z['简介']
-        item['rdOK'] = z['文件大小']
-        item['rdMagnet'] = z['Magnet連接'][1]
-        item['rdMagnet2'] = z['Magnet連接typeII'][0]
+        item['rdOK'] = z['资源完成数']
+        item['rdMagnet'] = z['Magnet連接'][1][20:]
+        item['rdMagnet2'] = z['Magnet連接typeII'][0][20:]
         item['rdTracker'] =z['Magnet連接'][0][len(z['Magnet連接'][1]):]
         item['rdType_id'] = z['类别'][1]
-        item['rdView'] = z['详情URL']
+        item['rdView'] = z['详情URL'].split('_',1)[0] #  'rdView': 'https://share.dmhy.org/topics/view/511931_AngelEcho_70.html'}
+        item['rdUper'] = z['资源发布者']
         item['isdelete'] = 0
         yield item
 

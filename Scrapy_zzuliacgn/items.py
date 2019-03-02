@@ -31,4 +31,5 @@ class dmhyItem(scrapy.Item):
     rdTracker = scrapy.Field()#资源下tracker服务器
     rdType_id =scrapy.Field()#资源种类
     rdView = scrapy.Field()#资源详细页地址
+    rdUper = scrapy.Field()#资源发布者
     isdelete = scrapy.Field()#资源详细页地址

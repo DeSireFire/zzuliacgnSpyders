@@ -48,6 +48,7 @@ def get_header():
         'Accept-Language': 'en-US,en;q=0.5',
         'Connection': 'keep-alive',
         'Accept-Encoding': 'gzip, deflate',
+        'Referer' : 'https://www.google.com',
     }
 
 '''
