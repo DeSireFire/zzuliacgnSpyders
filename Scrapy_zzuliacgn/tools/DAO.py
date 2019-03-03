@@ -8,7 +8,7 @@ connect_dict = {
     # "user":DATABASES["default"]["USER"],
     # "passwd":DATABASES["default"]["PASSWORD"],
     # "db":DATABASES["default"]["NAME"],
-    "host": '192.168.0.103',
+    "host": '192.168.0.102',
     "port": 3306,
     "user": 'zzuliACGN',
     "passwd": 'DeSireFire233notRoot',
@@ -309,11 +309,11 @@ def main():
         # 批量插入
         newlist = []
         # typelist = ["玄幻","奇幻","武侠","仙侠","都市","现实","军事","历史","游戏","体育","科幻","灵异","女生","轻小说",]
-        typelist = ["动画","季度全集","漫画","港台漫画","日版漫画","音乐","动漫音乐","同人音乐","流行音乐","日剧","RAW","游戏","电脑游戏","电视游戏","掌机游戏","网络游戏","游戏周边","特摄","其他",]
-        for i in typelist:
-            temp = (i,0)
-            newlist.append(temp)
-        print(newlist)
+        # typelist = ["动画","季度全集","漫画","港台漫画","日版漫画","音乐","动漫音乐","同人音乐","流行音乐","日剧","RAW","游戏","电脑游戏","电视游戏","掌机游戏","网络游戏","游戏周边","特摄","其他",]
+        # for i in typelist:
+        #     temp = (i,0)
+        #     newlist.append(temp)
+        # print(newlist)
         # insert_by_many(db,"ZA_Novel_type",newlist)
         # insert_by_many(db,"ZA_BT_rtypes",newlist)
         print("*" * 50)

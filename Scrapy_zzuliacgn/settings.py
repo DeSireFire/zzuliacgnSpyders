@@ -94,7 +94,7 @@ HTTPCACHE_STORAGE = 'scrapy.extensions.httpcache.FilesystemCacheStorage'
 # 数据库信息
 # MYSQL配置
 # 默认
-MYSQL_HOST = '192.168.0.107' # 数据库地址
+MYSQL_HOST = '192.168.0.103' # 数据库地址
 MYSQL_DATABASE = 'zzuli_ACGN' # 数据库名
 MYSQL_USER = 'zzuliACGN'
 MYSQL_PASSWORD = 'DeSireFire233notRoot'
