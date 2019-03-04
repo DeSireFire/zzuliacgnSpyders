@@ -18,7 +18,7 @@ NEWSPIDER_MODULE = 'Scrapy_zzuliacgn.spiders'
 
 # Crawl responsibly by identifying yourself (and your website) on the user-agent
 # USER_AGENT = 'Scrapy_zzuliacgn (+http://www.yourdomain.com)'
-USER_AGENT = random.choice(config.USER_AGENTS)
+# USER_AGENT = random.choice(config.USER_AGENTS)
 
 # Obey robots.txt rules
 ROBOTSTXT_OBEY = False
@@ -41,14 +41,17 @@ CONCURRENT_REQUESTS = 1
 #TELNETCONSOLE_ENABLED = False
 
 # Override the default request headers:
-DEFAULT_REQUEST_HEADERS = config.get_header()
+# DEFAULT_REQUEST_HEADERS = config.get_header()
 
 # Enable or disable spider middlewares
 # See http://scrapy.readthedocs.org/en/latest/topics/spider-middleware.html
-# SPIDER_MIDDLEWARES = {
-#    'Scrapy_zzuliacgn.middlewares.ScrapyBtSpiderMiddleware': 543,
-# }
-
+SPIDER_MIDDLEWARES = {
+    'scrapy.spidermiddlewares.httperror.HttpErrorMiddleware': 50,
+    'scrapy.spidermiddlewares.offsite.OffsiteMiddleware': 500,
+    'scrapy.spidermiddlewares.referer.RefererMiddleware': 700,
+    'scrapy.spidermiddlewares.urllength.UrlLengthMiddleware': 800,
+    'scrapy.spidermiddlewares.depth.DepthMiddleware': 900,
+}
 # Enable or disable downloader middlewares
 # See http://scrapy.readthedocs.org/en/latest/topics/downloader-middleware.html
 DOWNLOADER_MIDDLEWARES = {

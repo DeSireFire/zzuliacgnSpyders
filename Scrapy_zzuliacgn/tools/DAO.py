@@ -160,7 +160,7 @@ def insert_by_many(connect,table_name,data):
 # 忽略以存在数据插入
 def insert_IGNORE(connect, table_name, data):
     """
-
+    比如想往表中插入一条数据，如果表中没有该条数据才插入，如果已经存在该条数据就不插入
     :param connect: 连接对象
     :param table_name: 表名
     :param data: 要插入的数据，传入字典
