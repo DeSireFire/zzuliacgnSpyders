@@ -86,6 +86,7 @@ def getDMHY_types(_str):
         'sort-1':'其他',
         'viewInfoURL':'https://share.dmhy.org/topics/view/',
     }
+
     return types[_str]
 
 def HtmlDownloader(URL,_header):

@@ -41,15 +41,15 @@ class mysqlPipeline(object):
             print('老子是dmhy的管道，我感受到了力量')
             # print(item)
             # print(type(item))
-            self.mysql_handler(item,'ZA_BT_items')
+            self.mysql_insert_update(item,'ZA_BT_items')
         elif spider.name == 'nyaa':
             print('老子是nyaa的管道，我感受到了力量')
-            self.mysql_handler(item, 'ZA_BT_items')
+            self.mysql_insert_IGNORE(item, 'ZA_BT_items')
         else:
             print("我是谁，我在哪，我在做什么")
         return item
 
-    def mysql_handler(self,item,tableName):
+    def mysql_insert_update(self,item,tableName):
         '''
         针对mysql复用的管道函数，存在就进行更新，不存在则插入新条目
         注意： 数据库表中，必须存在有唯一约束的字段
@@ -70,3 +70,25 @@ class mysqlPipeline(object):
                 self.db.commit()
         except Exception as e:
             print("更新数据 时发生错误:%s" % e)
+
+    def mysql_insert_IGNORE(self,item,tableName):
+        '''
+        针对mysql复用的管道函数，存在就进行更新，不存在则插入新条目
+        注意： 数据库表中，必须存在有唯一约束的字段
+        :param item:框架传递过来的item
+        :param tableName:要存储到的表名
+        :return:
+        '''
+        data = dict(item)
+        # # print(type(data))
+        mykeys = ",".join(data.keys())
+        myvalues = ",".join(['%s'] * len(data))
+        myUpdate = ",".join([" {key} = %s".format(key=key) for key in data])
+        sql = "INSERT IGNORE INTO {table}({keys}) VALUES ({values})".format(table=tableName, keys=mykeys,values=myvalues)
+        try:
+            if self.cursor.execute(sql, tuple(data.values())):
+                print("忽略中出成功！")
+                self.cursor.commit()
+        except Exception as e:
+            print("忽略以存在数据插入 时发生错误:%s" % e)
+            self.cursor.rollback()

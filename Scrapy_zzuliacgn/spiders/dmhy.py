@@ -67,9 +67,6 @@ class DmhySpider(scrapy.Spider):
         # url = response.urljoin(_next)
         # yield scrapy.Request(url=url,callback=self.parse,dont_filter=False)
 
-    def update_parse(self,response):
-        pass
-
 
     def infoView(self, response):
         rec_dict_temp = {
@@ -98,35 +95,61 @@ class DmhySpider(scrapy.Spider):
         item['isdelete'] = 0
         yield item
 
-    def getDMHY_types(self, _str):
+    def getDMHY_types(self, TypeStr):
         '''
         动漫花园资源类别转换
         :param _str: 字符串，传入类似“sort-2”即可
         :return: 字符串
         '''
+        # types = {
+        #     'sort-2': ['动画','1'],
+        #     'sort-31': ['季度全集','11'],
+        #     'sort-3': ['漫画','2'],
+        #     'sort-41': ['港台漫画','21'],
+        #     'sort-42': ['日版漫画','22'],
+        #     'sort-4': ['音乐','3'],
+        #     'sort-43': ['动漫音乐','31'],
+        #     'sort-44': ['同人音乐','32'],
+        #     'sort-15': ['流行音乐','33'],
+        #     'sort-6': ['日剧','4'],
+        #     'sort-7': ['RAW','5'],
+        #     'sort-9': ['游戏','6'],
+        #     'sort-17': ['电脑游戏','61'],
+        #     'sort-18': ['电视游戏','62'],
+        #     'sort-19': ['掌机游戏','63'],
+        #     'sort-20': ['网络游戏','64'],
+        #     'sort-21': ['游戏周边','65'],
+        #     'sort-12': ['特摄','7'],
+        #     'sort-1': ['其他','8'],
+        #     'viewInfoURL': 'https://share.dmhy.org/topics/view/',
+        # }
         types = {
             'sort-2': ['动画','1'],
-            'sort-31': ['季度全集','11'],
-            'sort-3': ['漫画','2'],
-            'sort-41': ['港台漫画','21'],
-            'sort-42': ['日版漫画','22'],
-            'sort-4': ['音乐','3'],
-            'sort-43': ['动漫音乐','31'],
-            'sort-44': ['同人音乐','32'],
-            'sort-15': ['流行音乐','33'],
-            'sort-6': ['日剧','4'],
-            'sort-7': ['RAW','5'],
-            'sort-9': ['游戏','6'],
-            'sort-17': ['电脑游戏','61'],
-            'sort-18': ['电视游戏','62'],
-            'sort-19': ['掌机游戏','63'],
-            'sort-20': ['网络游戏','64'],
-            'sort-21': ['游戏周边','65'],
-            'sort-12': ['特摄','7'],
-            'sort-1': ['其他','8'],
+            'sort-31': ['季度全集', '11'],
+            'sort-3': ['漫画', '2'],
+            'sort-41': ['港台漫画', '21'],
+            'sort-42': ['日版漫画', '22'],
+            'sort-4': ['音乐', '3'],
+            'sort-43': ['动漫音乐', '31'],
+            'sort-44': ['同人音乐', '32'],
+            'sort-15': ['流行音乐', '33'],
+            'sort-6': ['日剧', '41'],
+            'sort-12': ['特摄', '42'],
+            'sort-7': ['RAW', '5'],
+            'sort-9': ['游戏', '6'],
+            'sort-17': ['电脑游戏', '61'],
+            'sort-18': ['电视游戏', '62'],
+            'sort-19': ['掌机游戏', '63'],
+            'sort-20': ['网络游戏', '64'],
+            'sort-21': ['游戏周边', '65'],
+            'sort-1': ['其他', '9'],
             'viewInfoURL': 'https://share.dmhy.org/topics/view/',
         }
-        return types[_str]
+        if TypeStr in types:
+            return types[TypeStr]
+        else:
+            print('未识别此类别！%s'%TypeStr)
+            return ['其他','8']
 
     def re_DMHY(self,html_text, re_pattern, nbsp_del=True):
         '''
