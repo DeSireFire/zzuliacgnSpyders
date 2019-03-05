@@ -78,7 +78,7 @@ class DmhySpider(scrapy.Spider):
         item['rdOK'] = z['资源完成数']
         item['rdMagnet'] = z['Magnet連接'][1][20:]
         item['rdMagnet2'] = z['Magnet連接typeII'][0][20:]
-        item['rdTracker'] =z['Magnet連接'][0][len(z['Magnet連接'][1]):]
+        item['rdTracker'] =z['Magnet連接'][0][len(z['Magnet連接'][1])+4:]
         item['rdType_id'] = z['类别'][1]
         item['rdView'] = z['详情URL'].split('_',1)[1] #  'rdView': 'https://share.dmhy.org/topics/view/511931_AngelEcho_70.html'}
         item['rdUper'] = z['资源发布者']
