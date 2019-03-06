@@ -2,6 +2,13 @@
 import scrapy,re,chardet,random
 from Scrapy_zzuliacgn.items import nyaaItem
 from Scrapy_zzuliacgn.customSettings import nyaa
+
+'''
+不得不说一句，nyaa上面的链接资源是很全面的，但是真的缺乏管理。
+甚至可以说就是乱七八糟的垃圾场..
+资源分类乱七八糟的，清洗分类工作量巨大。
+'''
+
 class NyaaSpider(scrapy.Spider):
     name = "nyaa"
     allowed_domains = ["nyaa.si"]
@@ -12,7 +19,27 @@ class NyaaSpider(scrapy.Spider):
     re_info = '<div markdown-text class="panel-body" id="torrent-description">([\s\S]*?)<div class="panel panel-default">'
     re_uper = 'Uploadedby([\s\S]*?)on'
     nyaaListData = '<trclass="([\s\S]*?)"><tdstyle="padding:04px;"><ahref="/([\s\S]*?)"title="([\s\S]*?)"><imgsrc="([\s\S]*?)"alt="([\s\S]*?)"style="([\s\S]*?)"></a></td><tdcolspan="([\s\S]*?)"><ahref="([\s\S]*?)"title="([\s\S]*?)">([\s\S]*?)</a></td><tdclass="text-center"style="white-space:nowrap;"><ahref="([\s\S]*?)"><iclass="fafa-fwfa-download"></i></a><ahref="([\s\S]*?)"><iclass="fafa-fwfa-magnet"></i></a></td><tdclass="text-center">([\s\S]*?)</td><tdclass="text-center"data-timestamp="([\s\S]*?)">([\s\S]*?)</td><tdclass="text-center"style="color:green;">([\s\S]*?)</td><tdclass="text-center"style="color:red;">([\s\S]*?)</td><tdclass="text-center">([\s\S]*?)</td>'
-    testlist = []
+    IGNORE_type = [
+        'Anime-English-translated',
+        'Anime-AnimeMusicVideo',
+        'Literature-Non-English-translated',
+        'Literature-English-translated',
+        'Software-Applications',
+        'LiveAction-Non-English-translated',
+        'LiveAction-Idol/PromotionalVideo',
+        'Pictures-Graphics',
+        'Pictures-Photos',
+        'Software-Games',
+        'Literature-Raw',
+        'LiveAction-Raw',
+        'LiveAction-Idol/PromotionalVideo',
+        'LiveAction-English-translated',
+        'Audio-Lossy',
+        'Anime-Raw',
+        'Anime-Non-English-translated',
+    ]# 不爬取的类别名
+
+
     # 该爬虫所用的数据库信息
     custom_settings = nyaa
 
@@ -20,27 +47,26 @@ class NyaaSpider(scrapy.Spider):
         nyaaRespTe = response.text
         nyaaListDatas = self.re_Nyaa(nyaaRespTe, self.nyaaListData)
         for i in nyaaListDatas:
-            Magnet = self.raplaceCharacter(i[11]).split('&tr=',1)
-            rec_dict = {
-                '类别': i[2],
-                '标题': i[8],
-                '发布时间': i[14],
-                '文件大小': i[12],
-                'Magnet連接': Magnet[0][20:],
-                'Magnet連接typeII': Magnet[0][20:],
-                '跟踪器':'&tr={}'.format(Magnet[-1]),
-                '详情URL': i[7].split(r'"',1)[0],
-                '资源上传数': i[15],
-                '资源下载数': i[16],
-                '资源完成数': i[17],
-            }
-            info_url = response.urljoin(i[7].split(r'"',1)[0])
-            self.testlist.append(rec_dict['类别'])
-            # yield scrapy.Request(url=info_url, callback=self.infoView, meta={"item": rec_dict})
+            if i[2] not in self.IGNORE_type:
+                Magnet = self.raplaceCharacter(i[11]).split('&tr=',1)
+                rec_dict = {
+                    '类别': i[2],
+                    '标题': i[8],
+                    '发布时间': i[14],
+                    '文件大小': i[12],
+                    'Magnet連接': Magnet[0][20:],
+                    'Magnet連接typeII': Magnet[0][20:],
+                    '跟踪器':'&tr={}'.format(Magnet[-1]),
+                    '详情URL': i[7].split(r'"',1)[0],
+                    '资源上传数': i[15],
+                    '资源下载数': i[16],
+                    '资源完成数': i[17],
+                }
+                info_url = response.urljoin(i[7].split(r'"',1)[0])
+                # yield scrapy.Request(url=info_url, callback=self.infoView, meta={"item": rec_dict})
+            else:
+                print('%s 类型，标题： %s 不采集'%(i[2],i[8]))
 
-        self.testlist = list(set(self.testlist))
-        print(len(self.testlist))
-        print(self.testlist)
         _next = response.css('body .container .center li a::attr("href")').extract()
         # 采集下一页的地址，如果最后一个元素为“#”
         if '#' not in _next[-1] :
@@ -99,29 +125,29 @@ class NyaaSpider(scrapy.Spider):
 
         types = {
 
-            'LiveAction-Non-English-translated':['三次元','4'],
-            'LiveAction-Idol/PromotionalVideo':['偶像/宣发','91'],
-            'LiveAction-English-translated':['英翻三次元','92'],
+            # 'LiveAction-Non-English-translated':['三次元','4'],
+            # 'LiveAction-Idol/PromotionalVideo':['偶像/宣发','91'],
+            # 'LiveAction-English-translated':['英翻三次元','92'],
 
-            'Pictures-Graphics':['图像','7'],
-            'Pictures-Photos':['照片','71'],
+            # 'Pictures-Graphics':['图像','7'],
+            # 'Pictures-Photos':['照片','71'],
 
-            'Audio-Lossy':['压制音乐','35'],
+            # 'Audio-Lossy':['压制音乐','35'],
             'Audio-Lossless':['无损音乐','34'],
 
-            'Literature-English-translated':['英翻漫画','24'],
-            'Literature-Non-English-translated':['其他','8'], # 调用处理器细分
+            # 'Literature-English-translated':['英翻漫画','24'],
+            # 'Literature-Non-English-translated':['其他','8'], # 调用处理器细分
 
-            'Software-Applications':['软件应用','66'],
-            'Software-Games':['游戏','6'],
+            # 'Software-Applications':['软件应用','66'],
+            # 'Software-Games':['游戏','6'],
 
-            'Anime-Non-English-translated': ['动漫', '1'],
-            'Anime-AnimeMusicVideo':['AMV','12'],
-            'Anime-English-translated':['英翻动漫','13'],
+            # 'Anime-Non-English-translated': ['动漫', '1'],
+            # 'Anime-AnimeMusicVideo':['AMV','12'],
+            # 'Anime-English-translated':['英翻动漫','13'],
 
-            'Anime-Raw': ['生肉', '5'],
-            'Literature-Raw': ['日版漫画', '22'],
-            'LiveAction-Raw': ['三次元生肉', '52'],
+            # 'Anime-Raw': ['生肉', '5'],
+            # 'Literature-Raw': ['日版漫画', '22'],
+            # 'LiveAction-Raw': ['三次元生肉', '52'],
         }
         if TypeStr in types:
             return types[TypeStr]
