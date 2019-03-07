@@ -75,8 +75,8 @@ class DmhySpider(scrapy.Spider):
             '文件大小':self.re_DMHY(response.text, self.re_size)[0],
             'Magnet連接':list(self.re_DMHY(response.text, self.re_magnet1)[0]),
             'Magnet連接typeII':list(self.re_DMHY(response.text, self.re_magnet2)[0]),
-            '简介':self.re_DMHY(response.text, self.re_info,False)[0][:-7],
-            '文件列表':re.sub('/images/icon/','/resourcedownload/images/icon/',self.re_DMHY(response.text, self.re_FileList,False)[0],)
+            '简介':self.re_DMHY(response.text, self.re_info,False)[0][:-7].replace('\t','').replace('\n',''),
+            '文件列表':re.sub(' src="/images/icon/(.*?).gif"','',self.re_DMHY(response.text, self.re_FileList,False)[0].replace('\t','').replace('\n','').replace('><img align="middle" ',' '),)
         }
 
 
