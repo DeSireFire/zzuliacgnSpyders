@@ -19,7 +19,7 @@ class DmhySpider(scrapy.Spider):
     re_info = '<strong>簡介:&nbsp;</strong>([\s\S]*?)<a name="description-end"></a>'
     re_magnet1 = '<aclass="magnet"id="a_magnet"href="([\s\S]*?)">([\s\S]*?)</a>'
     re_magnet2 = '<aid="magnet2"href="([\s\S]*?)">([\s\S]*?)</a>'
-    # re_uper = '<tdalign="center"><ahref="([\s\S]*?)">([\s\S]*?)</a></td>'
+    re_FileList = '<div class="file_list">([\s\S]*?)</div>'
     re_UDO_DATA = '<tdnowrap="nowrap"align="center"><spanclass="btl_1">([\s\S]*?)</span></td><tdnowrap="nowrap"align="center"><spanclass="bts_1">([\s\S]*?)</span></td><tdnowrap="nowrap"align="center">([\s\S]*?)</td><tdalign="center"><ahref="([\s\S]*?)">([\s\S]*?)</a></td>'
     # 该爬虫所用的数据库信息
     custom_settings = dmhy
@@ -75,9 +75,14 @@ class DmhySpider(scrapy.Spider):
             '文件大小':self.re_DMHY(response.text, self.re_size)[0],
             'Magnet連接':list(self.re_DMHY(response.text, self.re_magnet1)[0]),
             'Magnet連接typeII':list(self.re_DMHY(response.text, self.re_magnet2)[0]),
-            '简介':r'<div>\r\n'+self.re_DMHY(response.text, self.re_info,False)[0],
+            '简介':self.re_DMHY(response.text, self.re_info,False)[0][:-7],
+            '文件列表':re.sub('/images/icon/','/resourcedownload/images/icon/',self.re_DMHY(response.text, self.re_FileList,False)[0],)
         }
+
+
         z = {**response.meta["item"],**rec_dict_temp} # py3.5新语法，合并更新字典
+        print(z['文件列表'])
+        print(type(z['文件列表']))
         item = dmhyItem()
         item['rdName'] = z['标题']
         item['rdUpTime'] = z['发布时间']
@@ -88,7 +93,8 @@ class DmhySpider(scrapy.Spider):
         item['rdOK'] = z['资源完成数']
         item['rdMagnet'] = z['Magnet連接'][1][20:]
         item['rdMagnet2'] = z['Magnet連接typeII'][0][20:]
-        item['rdTracker'] =z['Magnet連接'][0][len(z['Magnet連接'][1]):]
+        item['rdTracker'] =z['Magnet連接'][0][len(z['Magnet連接'][1]):][4:]
+        item['rdFileList'] =z['文件列表']
         item['rdType_id'] = z['类别'][1]
         item['rdView'] = z['详情URL'].split('_',1)[1] #  'rdView': 'https://share.dmhy.org/topics/view/511931_AngelEcho_70.html'}
         item['rdUper'] = z['资源发布者']
