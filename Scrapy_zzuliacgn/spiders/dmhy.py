@@ -70,7 +70,7 @@ class DmhySpider(scrapy.Spider):
 
     def infoView(self, response):
         rec_dict_temp = {
-            '标题':self.re_DMHY(response.text, self.re_title)[0],
+            '标题':self.urlDecode(self.re_DMHY(response.text, self.re_title)[0]),
             '发布时间':self.timeMaker(self.re_DMHY(response.text, self.re_time)[0]),
             '文件大小':self.re_DMHY(response.text, self.re_size)[0],
             'Magnet連接':list(self.re_DMHY(response.text, self.re_magnet1)[0]),
@@ -78,11 +78,7 @@ class DmhySpider(scrapy.Spider):
             '简介':self.re_DMHY(response.text, self.re_info,False)[0][:-7].replace('\t','').replace('\n',''),
             '文件列表':re.sub(' src="/images/icon/(.*?).gif"','',self.re_DMHY(response.text, self.re_FileList,False)[0].replace('\t','').replace('\n','').replace('><img align="middle" ',' '),)
         }
-
-
         z = {**response.meta["item"],**rec_dict_temp} # py3.5新语法，合并更新字典
-        print(z['文件列表'])
-        print(type(z['文件列表']))
         item = dmhyItem()
         item['rdName'] = z['标题']
         item['rdUpTime'] = z['发布时间']
@@ -178,3 +174,17 @@ class DmhySpider(scrapy.Spider):
         :return:整理好的时间字符串
         '''
         return "{} {}:{}{}.{}".format('-'.join(time_str[:10].split('/')), time_str[10:],random.randint(0,5),random.randint(0,9),''.join(str(random.choice(range(10))) for i in range(6)))
+
+    def urlDecode(self,tempStr):
+        '''
+        用于转换url编码的特殊符号，例如&amp;转&
+        :param tempStr: 需要替换的字符串
+        :return: 字符串类型，tempStr
+        '''
+        # url编码的字符串
+        urlencode = ['&amp;']
+        # url解码的字符串
+        urldecode = ['&']
+        for n,m in zip(urlencode,urldecode):
+            tempStr = tempStr.replace(n,m)
+        return tempStr
