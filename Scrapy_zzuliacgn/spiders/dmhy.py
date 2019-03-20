@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-import scrapy,re,chardet,random
+import scrapy,re,random
 from Scrapy_zzuliacgn.items import dmhyItem
 from Scrapy_zzuliacgn.customSettings import dmhy
 
@@ -28,7 +28,6 @@ class DmhySpider(scrapy.Spider):
         a_i_u_e_o = response.text
         ha_hi_fu_he_ho = list(map(lambda x: self.getDMHY_types('viewInfoURL') + x, self.re_DMHY(a_i_u_e_o, self.re_infoURL)))
         sa_shi_su_se_so = self.re_DMHY(a_i_u_e_o, self.re_type)
-        # upers = self.re_DMHY(a_i_u_e_o, self.re_uper)
         UDOs = self.re_DMHY(a_i_u_e_o, self.re_UDO_DATA)
         for ma_mi_mu_me_mo, na_ni_nu_ne_no, re_UDO in zip(ha_hi_fu_he_ho, sa_shi_su_se_so,UDOs):
             rec_dict = {

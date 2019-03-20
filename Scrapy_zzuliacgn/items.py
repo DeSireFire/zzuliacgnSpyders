@@ -50,3 +50,29 @@ class nyaaItem(scrapy.Item):
     rdView = scrapy.Field()#资源详细页地址
     rdUper = scrapy.Field()#资源发布者
     isdelete = scrapy.Field()#资源详细页地址
+
+class wenku8Item(scrapy.Item):
+    novelName = scrapy.Field() # 小说名
+    writer = scrapy.Field() # 作者名
+    illustrator = scrapy.Field() # 插画师名
+    fromPress = scrapy.Field()  # 文库名
+    intro = scrapy.Field() # 小说简介
+    headerImage = scrapy.Field() # 小说封面
+    worksNum = scrapy.Field() # 小说字数
+    types = scrapy.Field() #小说所属类型
+    saveTime = scrapy.Field() # 小说收录时间,最旧的章节时间为收录时间
+    updateTime = scrapy.Field() # 小说更新时间，最新的章节时间为更新时间
+    action = scrapy.Field() # 小说更新时间
+    detail = scrapy.Field() # 正文详细
+
+    '''
+    思路记录：
+    由于小说主体内容过大，所以不适合保存在后端服务器；
+    采取存储在第三方的方式，并保存相应的保存地址，通过后台发送请求获取文章正文；
+    novel_container 预计存储格式如下：
+    [[小说章节名1,保存地址1],[小说章节名2,保存地址2],[小说章节名3,保存地址3]..]
+    小说章节数，则以该列表的下标+1的方式记录。
+    '''
+    # name = scrapy.Field() # 所属书名
+    # novel_title = scrapy.Field() # 小说册名
+    # container = scrapy.Field() # 正文
