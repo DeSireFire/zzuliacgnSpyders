@@ -17,6 +17,7 @@ class Wenku8Spider(scrapy.Spider):
     novel_action='<td width="20%">文章状态：([\s\S]*?)</td>'  # 小说状态（连载or完结）
     index_url='<div style="text-align:center"><a href="([\s\S]*?)">小说目录</a></div>'  # 应用于某些小说网站，文章简介与文章内容分层的情况
     Chapter_title=r'<td class="vcss" colspan="4">(.*?)</td>' # 小说卷名
+    Chapter_name=r'<td class="ccss"><a href="([\s\S]*?)">([\s\S]*?)</a></td>' # 小说章节名
     # def start_requests(self):
     #     url = 'https://www.wenku8.net/book/{num}.htm'
     #     for i in range(1, 51):
@@ -35,17 +36,15 @@ class Wenku8Spider(scrapy.Spider):
         }
         print(main_dict)
         yield scrapy.Request(url=main_dict["小说目录地址"], callback=self.index_info, meta={"item": main_dict})
-        # print(self.reglux(response.text, self.novel_writer,False))
 
     def index_info(self, response):
 
         Chapter = self.reglux(response.text, '<tr>([\s\S]*?)</tr>',False)
+        recdict = self.titleCheck(Chapter)
+        for i in recdict:
+            print('%s:%s'%(i,recdict[i]))
 
-        # todo 这里的逻辑需要理清！
-        self.titleCheck(Chapter, self.Chapter_title)
-        print(Chapter)
-
-    def reglux(self,html_text, re_pattern, nbsp_del=True):
+    def reglux(self, html_text, re_pattern, nbsp_del=True):
         '''
         正则过滤函数
         :param html_text: 字符串，网页的文本
@@ -64,14 +63,13 @@ class Wenku8Spider(scrapy.Spider):
             return '暂无具体信息...'
 
     # 卷名识别以及章节从属
-    def titleCheck(self, tlist, Rlist, tkey='class="vcss"'):
+    def titleCheck(self, tlist, tkey='class="vcss"'):
         """
         若出现卷名和章节名都在同一个页面时（例如：https://www.wenku8.net/novel/1/1592/index.htm）,
         用此函数整理分卷和其所属章节的关系,并用reglux_list方法进行清洗
         :param tlist:列表，包含卷名和章节名的列表
         :param tkey:字符串，用来判断区分列表卷名和章节的关键字
-        :param Rlist:传入config.parserList[i]["pattern"]["Chapter"]
-        :return:
+        :return:recdict
         """
         tids = []  # 筛选出“原矿”列表中，所有册名的下标
         for i in tlist:
@@ -83,10 +81,16 @@ class Wenku8Spider(scrapy.Spider):
             temp = tlist[tids[count]:tids[count + 1]]
             if count + 1 == len(tids) - 1:
                 temp = tlist[tids[count + 1]:]
-            recdict[self.reglux(Rlist['novel_title'], temp[0])[0]] = self.reglux(Rlist['novel_chapter'], ''.join(temp[1:]))
+                '''
+                temp[0]必包含卷名，其后temp[1:]均为其所属章节名
+                temp[0] 取出带有卷名未清洗的html，例如：<td class="vcss" colspan="4">短篇</td>；
+                self.reglux(temp[0],self.Chapter_title,False 通过正则得到列表，下标0的位置为清洗出的卷名,例如：短篇；
+                self.reglux(''.join(temp[1:]),self.Chapter_name,False) 通过正则清洗，得到章节地址和章节名；
+                recdict为字典，recdict[key]=value,给键赋值；
+                '''
+            recdict[ self.reglux(temp[0],self.Chapter_title,False)[0] ] = self.reglux(''.join(temp[1:]),self.Chapter_name,False)
             count += 1
-        print(recdict)
-
+        return recdict
     # def reglux_list(self,mydict, responseSTR):
     #     """
     #     遍历正则抓取数据
