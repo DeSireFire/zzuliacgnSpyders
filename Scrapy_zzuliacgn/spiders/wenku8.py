@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-import scrapy,re,chardet,random
+import scrapy,re,chardet,random,datetime
 
 
 class Wenku8Spider(scrapy.Spider):
@@ -31,18 +31,87 @@ class Wenku8Spider(scrapy.Spider):
             '封面':self.reglux(response.text, self.novel_headerImage,False)[0],
             '字数':self.reglux(response.text, self.novel_worksNum,False)[0],
             '文章状态':self.reglux(response.text, self.novel_action,False)[0],
-            '小说目录地址':self.reglux(response.text, self.index_url,False)[0],
+            '小说目录':self.reglux(response.text, self.index_url,False)[0],
             '小说全本地址':'http://dl.wkcdn.com/txtutf8{num}.txt'.format(num = self.reglux(response.text, self.index_url,False)[0][28:-10]),
         }
         print(main_dict)
-        yield scrapy.Request(url=main_dict["小说目录地址"], callback=self.index_info, meta={"item": main_dict})
+        yield scrapy.Request(url=main_dict["小说目录"], callback=self.index_info, meta={"item": main_dict})
 
     def index_info(self, response):
-
         Chapter = self.reglux(response.text, '<tr>([\s\S]*?)</tr>',False)
-        recdict = self.titleCheck(Chapter)
-        for i in recdict:
-            print('%s:%s'%(i,recdict[i]))
+        main_dict = response.meta["item"]
+        main_dict['小说目录'] = self.titleCheck(Chapter)
+        # for i in response.meta["item"]['小说目录']:
+        #     print('%s:%s'%(i,response.meta["item"]['小说目录'][i]))
+        yield scrapy.Request(url=main_dict["小说全本地址"], callback=self.full_text,meta={"item": main_dict})
+
+    def full_text(self,response):
+        main_dict = response.meta["item"]
+        full_text = response.text[35:]
+        # print([full_text])
+
+        index_list = []
+        # todo 两处大循环需要合并
+        for m in main_dict['小说目录']:
+            # main_dict['小说目录'] : 第一卷 渴望死亡的小丑:[('2.htm', '序章 取代自我介绍的回忆—前天才美少女作家'), ('3.htm', '第一章 远子学姐是美食家'), ('4.htm', '第二章 这个世界上最美味的故事'), ('5.htm', '第三章 第一手记--片冈愁二的告白'), ('6.htm', '第四章 五月放晴天，他
+            # ……'), ('7.htm', '第五章 『文学少女』的推理'), ('8.htm', '第六章 『文学少女』的主张'), ('9.htm', '终章 新的故事'), ('10.htm', '后记'), ('24315.htm', '插图')]
+            # m 为取 字典中的键
+            for n in main_dict['小说目录'][m]:
+            # n 遍历取对应键值中存着的列表
+            # n :('2.htm', '序章 取代自我介绍的回忆—前天才美少女作家')
+
+            #     print('%s %s([\s\S]*?)'%(m,n[1]))
+
+            # 将拼接好的字符串存入列表
+                index_list.append('%s %s'%(m,n[1]))
+        # 添加一个没什么卵用的列表末尾元素，方便生成正则表达式，
+        index_list.append('◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆')
+        # index_list = list(set(index_list))
+        print(index_list)
+        # 临时存储列表
+        temp = []
+        for m in main_dict['小说目录']:
+            # print('当前卷名：%s' % m)
+            # todo 此处全遍历过于消耗性能
+            index_len_count = 0
+            for n in index_list[:-1]:# 舍弃上面的没用的末尾元素，避免出现超出列表下标范围
+                if m in n:
+                    # print('章节:< %s >属于《 %s 》'%(n,m))
+                    # # 通过表达式获取章节里面的小说内容
+                    res_re = ('%s([\s\S]*?)%s'%(n,index_list[index_list.index(n)+1]))
+                    # print('章节:< %s >的， 正则表达式为: %s'%(n,res_re)) # 将列表部分元素转化成字符串，形成正则表达式
+                    # print('使用下标%s'%index_len_count)
+                    if list(main_dict['小说目录'][m])[index_len_count][1] not in n:
+                        print('得到%s,对比 %s' % (list(main_dict['小说目录'][m])[index_len_count], n))
+                    temp_dict = {
+                            # '正文': self.reglux(full_text, res_re, False),
+                            '卷名':m,
+                            '章节名':n[len(m):],
+                            '所属小说':main_dict['书名'],
+                            '章节地址':list(main_dict['小说目录'][m]),
+                            '更新时间':datetime.datetime.now(),
+                        }
+                    temp.append(temp_dict)
+                    # print(temp_dict)
+                    index_len_count += 1
+
+
+                    # 输出成文本
+                    with open('%s—%s.txt' % (m,n), 'w', encoding='utf-8') as f:
+                        f.write(self.reglux(full_text, res_re, False)[0])
+
+                    # 取出main_dict['小说目录'] : 第一卷 渴望死亡的小丑:[('2.htm', '序章 取代自我介绍的回忆—前天才美少女作家')中的元组
+                    # print(main_dict['小说目录'][m])
+                    # print(list(main_dict['小说目录'][m][]))
+
+                    # if index_len_count<len(main_dict['小说目录']):
+                    #     index_len_count += 1
+                    # if len(test2[0])<20:
+                    #     print(test2[0])
+                    # else:
+                    #     print(len(test2[0]))
+                    # print(len(test2[0]))
+                    # print(test2[0])
 
     def reglux(self, html_text, re_pattern, nbsp_del=True):
         '''
@@ -52,6 +121,7 @@ class Wenku8Spider(scrapy.Spider):
         :param nbsp_del: 布尔值，控制是否以去除换行符的形式抓取有用信息
         :return:
         '''
+        re_pattern = re_pattern.replace('~[',"\~\[").replace(']~','\]\~')
         pattern = re.compile(re_pattern)
         if nbsp_del:
             temp = pattern.findall("".join(html_text.split()))
@@ -60,7 +130,7 @@ class Wenku8Spider(scrapy.Spider):
         if temp:
             return temp
         else:
-            return '暂无具体信息...'
+            return ['暂无具体信息...']
 
     # 卷名识别以及章节从属
     def titleCheck(self, tlist, tkey='class="vcss"'):
@@ -88,22 +158,6 @@ class Wenku8Spider(scrapy.Spider):
                 self.reglux(''.join(temp[1:]),self.Chapter_name,False) 通过正则清洗，得到章节地址和章节名；
                 recdict为字典，recdict[key]=value,给键赋值；
                 '''
-            recdict[ self.reglux(temp[0],self.Chapter_title,False)[0] ] = self.reglux(''.join(temp[1:]),self.Chapter_name,False)
+            recdict[ self.reglux(temp[0],self.Chapter_title,False)[0] ] = sorted(self.reglux(''.join(temp[1:]),self.Chapter_name,False))
             count += 1
         return recdict
-    # def reglux_list(self,mydict, responseSTR):
-    #     """
-    #     遍历正则抓取数据
-    #     :param mydict: 字典类型{key:正则表达式，}
-    #     :param responseSTR: request.text需要正则匹配的字符串
-    #     :return: 字典类型
-    #     """
-    #     temp = {}
-    #     for m, n in mydict.items():
-    #         if '' != n:
-    #             pattern = re.compile(n)
-    #             matchs = pattern.findall(responseSTR)
-    #             temp.update({m: matchs, })
-    #         else:
-    #             temp.update({m: list(n), })
-    #     return temp
