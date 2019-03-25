@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 import scrapy,re,chardet,random,datetime
-import requests as nyaa
+from Scrapy_zzuliacgn.tools.aixinxi_tools import *
+from Scrapy_zzuliacgn.customSettings import aixinxi_header,wenku8
+# from Scrapy_zzuliacgn.items import wenku8Item
 
 class Wenku8Spider(scrapy.Spider):
     name = "wenku8"
@@ -11,7 +13,7 @@ class Wenku8Spider(scrapy.Spider):
     novel_writer='<td width="20%">小说作者：([\s\S]*?)</td>'  # 作者名
     novel_intro='<span class="hottext">内容简介：</span><br /><span style="font-size:14px;">([\s\S]*?)</span>'  # 小说简介
     novel_headerImage=r'td width="20%" align="center" valign="top">\r\n          <img src="([\s\S]*?)"'  # 小说封面URL
-    novel_worksNum='<td width="20%">全文长度：([\s\S]*?)</td>'  # 小说字数
+    novel_worksNum='<td width="20%">全文长度：([\s\S]*?)字</td>'  # 小说字数
     novel_saveTime:'' # 小说收录时间
     novel_updateTime:'' # 小说更新时间
     novel_action='<td width="20%">文章状态：([\s\S]*?)</td>'  # 小说状态（连载or完结）
@@ -19,9 +21,20 @@ class Wenku8Spider(scrapy.Spider):
     Chapter_title=r'<td class="vcss" colspan="4">(.*?)</td>' # 小说卷名
     Chapter_name=r'<td class="ccss"><a href="([\s\S]*?)">([\s\S]*?)</a></td>' # 小说章节名
     Chapter_img=r'<img src="([\s\S]*?)" border="0" class="imagecontent">' # 小说插图
+
+    # 该爬虫所用的settings信息
+    custom_settings = wenku8
+
+    # 检测custom_settings中爱信息图床的头部是否可用
+    # if not logining(aixinxi_header):
+    #     print('爱信息图床登陆状态不正常！')
+    #     aixinxi_header = login()
+    #     print(aixinxi_header)
+    # else:
+    #     print('爱信息图床登陆状态正常！')
     # def start_requests(self):
     #     url = 'https://www.wenku8.net/book/{num}.htm'
-    #     for i in range(1, 51):
+    #     for i in range(1, 2):
     #         yield scrapy.Request(url.format(i), callback=self.parse)
 
     def parse(self, response):
@@ -30,7 +43,8 @@ class Wenku8Spider(scrapy.Spider):
             '作者':self.reglux(response.text, self.novel_writer,False)[0],
             '简介':self.reglux(response.text, self.novel_intro,False)[0],
             '封面':self.reglux(response.text, self.novel_headerImage,False)[0],
-            '字数':self.reglux(response.text, self.novel_worksNum,False)[0],
+            '全书字数':0,
+            # '字数':self.reglux(response.text, self.novel_worksNum,False)[0],
             '文章状态':self.reglux(response.text, self.novel_action,False)[0],
             '小说目录':self.reglux(response.text, self.index_url,False)[0],
             '小说全本地址':'http://dl.wkcdn.com/txtutf8{num}.txt'.format(num = self.reglux(response.text, self.index_url,False)[0][28:-10]),
@@ -39,12 +53,20 @@ class Wenku8Spider(scrapy.Spider):
         yield scrapy.Request(url=main_dict["小说目录"], callback=self.index_info, meta={"item": main_dict})
 
     def index_info(self, response):
+        '''
+
+        :param response:
+        :return:
+        '''
         Chapter = self.reglux(response.text, '<tr>([\s\S]*?)</tr>',False)
         main_dict = response.meta["item"]
         main_dict['小说目录'] = self.titleCheck(Chapter)
         # for i in response.meta["item"]['小说目录']:
         #     print('%s:%s'%(i,response.meta["item"]['小说目录'][i]))
+
         yield scrapy.Request(url=main_dict["小说全本地址"], callback=self.full_text,meta={"item": main_dict})
+
+
 
     def full_text(self,response):
         '''
@@ -81,17 +103,22 @@ class Wenku8Spider(scrapy.Spider):
                     '所属小说':response.meta["item"]['书名'],
                     '章节地址':'https://www.wenku8.net/novel{}/{}'.format(response.url[27:-4],chapter[0]),
                     '更新时间':datetime.datetime.now(),
+                    '章节插画':[],
                 }
-                temp_dict['章节字数'] = len(''.join(temp_dict['正文']))
-                # todo 单章节已经封装好，如何进一步存储，这是个问题。
 
-                # print(temp_dict['章节字数'])
-                # if temp_dict['正文'] == '\r\n\r\n\r\n\r\n':
-                #     nyrespon = self.reglux(nyaa.get(temp_dict['章节地址']).text,self.Chapter_img,False)
-                #     print(nyrespon)
+                # 字数统计
+                temp_dict['章节字数'] = len(''.join(temp_dict['正文']))
+                response.meta["item"]['全书字数'] += temp_dict['章节字数']
+
+                # 放弃直接使用wenku8图片
+                if temp_dict['正文'] == '\r\n\r\n\r\n\r\n':
+                    temp_dict['章节名'] = '本册插画'
+
                 # 输出成文本
                 # with open('%s—%s.txt' % (title,chapter[1]), 'w', encoding='utf-8') as f:
                 #     f.write(self.reglux(full_text, temp_re, False)[0])
+
+
 
     def CheckRe(self,tempStr):
         '''
