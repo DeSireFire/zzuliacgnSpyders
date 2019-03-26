@@ -5,7 +5,7 @@ from Scrapy_zzuliacgn.customSettings import wenku8
 # from Scrapy_zzuliacgn.items import wenku8Item
 
 class Wenku8Spider(scrapy.Spider):
-    name = "wenku8"
+    name = "axxwenku8"
     allowed_domains = ["wenku8.net","wkcdn.com","httporg.bin"]
     start_urls = ['https://www.wenku8.net/book/1.htm']
 
