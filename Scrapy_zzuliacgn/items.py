@@ -59,9 +59,8 @@ class wenku8Item(scrapy.Item):
     intro = scrapy.Field() # 小说简介
     headerImage = scrapy.Field() # 小说封面
     resWorksNum = scrapy.Field() # 小说字数
+    # indexMenus = scrapy.Field() # 小说目录
     types = scrapy.Field() #小说所属类型
-
-
     action = scrapy.Field() # 连载状态
 
     # saveTime = scrapy.Field() # 小说收录时间,最旧的章节时间为收录时间
@@ -81,7 +80,7 @@ class wenku8ChapterItem:
     name = scrapy.Field() # 所属书名
     novel_title = scrapy.Field() # 小说册名
     chapter = scrapy.Field() # 章节名
-    worksNum = scrapy.Field() # 章节名
+    worksNum = scrapy.Field() # 章节字数
     container = scrapy.Field() # 正文
     updateTime = scrapy.Field()  # 小说更新时间，最新的章节时间为更新时间
     chapterImgurls = scrapy.Field() # 该章节的插画

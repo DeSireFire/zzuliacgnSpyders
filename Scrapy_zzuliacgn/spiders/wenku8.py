@@ -2,7 +2,7 @@
 import scrapy,re,chardet,random,datetime
 # from Scrapy_zzuliacgn.tools.aixinxi_tools import *
 from Scrapy_zzuliacgn.customSettings import wenku8
-# from Scrapy_zzuliacgn.items import wenku8Item
+from Scrapy_zzuliacgn.items import wenku8Item
 
 class Wenku8Spider(scrapy.Spider):
     name = "wenku8"
@@ -42,6 +42,7 @@ class Wenku8Spider(scrapy.Spider):
         main_dict = {
             '书名':self.reglux(response.text, self.novel_name,False)[0],
             '作者':self.reglux(response.text, self.novel_writer,False)[0],
+            '插画师':'暂时未知',
             '文库名':self.reglux(response.text, self.novel_fromPress,False)[0],
             '简介':self.reglux(response.text, self.novel_intro,False)[0],
             '封面':self.reglux(response.text, self.novel_headerImage,False)[0],
@@ -52,7 +53,6 @@ class Wenku8Spider(scrapy.Spider):
             '小说目录':self.reglux(response.text, self.index_url,False)[0],
             '小说全本地址':'http://dl.wkcdn.com/txtutf8{num}.txt'.format(num = self.reglux(response.text, self.index_url,False)[0][28:-10]),
         }
-        print(main_dict)
         yield scrapy.Request(url=main_dict["小说目录"], callback=self.index_info, meta={"item": main_dict})
 
     def index_info(self, response):
@@ -87,9 +87,11 @@ class Wenku8Spider(scrapy.Spider):
         values_list = list(response.meta["item"]['小说目录'].values())
 
         res_list = []
+        tempindex = {}
         # todo 有机会可以试试用迭代器实现
         for title,chapters in zip(keys_list,values_list):
             len_chapters = len(chapters)
+            tempindex[title] = []
             for chapter in chapters:
                 if len_chapters != chapters.index(chapter) + 1:  # 判断是否不为章节列表最后一个元素
                     temp_re = "{title} {chapter}([\s\S]*?){next_title} {next_chapter}".format(title=self.CheckRe(title), chapter=self.CheckRe(chapter[1]), next_title=self.CheckRe(title), next_chapter=self.CheckRe(chapters[chapters.index(chapter)+1][1]))  # 拼接正则表达式,"卷名 章节名([\s\S]*?)卷名/下一卷名 下一章节 "
@@ -119,18 +121,32 @@ class Wenku8Spider(scrapy.Spider):
                 if temp_dict['正文'] == '\r\n\r\n\r\n\r\n':
                     temp_dict['章节名'] = '本册插画'
                     temp_dict['正文'] = '本册插画'
+
+
                 res_list.append(temp_dict)
 
                 # 精简一下小说目录
-
+                tempindex[title].append(chapter[1])
                 # 输出成文本
                 # with open('%s—%s.txt' % (title,chapter[1]), 'w', encoding='utf-8') as f:
                 #     f.write(self.reglux(full_text, temp_re, False)[0])
 
         # todo 这一步已经可以整理入库了
-        print(response.meta["item"])
-        end_dict = response.meta["item"]
-        end_dict['小说目录'] = res_list
+        response.meta["item"]['小说正文'] = res_list
+        response.meta["item"]['小说目录'] = tempindex
+        item = wenku8Item()
+        item['novelName'] = response.meta["item"]['书名']
+        item['writer'] = response.meta["item"]['作者']
+        item['illustrator'] = response.meta["item"]['插画师']
+        item['fromPress'] = response.meta["item"]['文库名']
+        item['intro'] = response.meta["item"]['简介']
+        item['headerImage'] = response.meta["item"]['封面']
+        item['resWorksNum'] = response.meta["item"]['全书字数']
+        item['indexMenus'] = response.meta["item"]['小说目录']
+        item['types'] = response.meta["item"]['类型']
+        item['action'] = response.meta["item"]['文章状态']
+        item['temps'] = response.meta["item"]['小说正文']
+        yield item
 
 
     def CheckRe(self,tempStr):
