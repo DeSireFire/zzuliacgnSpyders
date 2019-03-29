@@ -2,7 +2,7 @@
 import scrapy,re,chardet,random,datetime
 # from Scrapy_zzuliacgn.tools.aixinxi_tools import *
 from Scrapy_zzuliacgn.customSettings import wenku8
-from Scrapy_zzuliacgn.items import wenku8Item
+from Scrapy_zzuliacgn.items import wenku8Item,wenku8ChapterItem
 
 class Wenku8Spider(scrapy.Spider):
     name = "wenku8"
@@ -127,13 +127,13 @@ class Wenku8Spider(scrapy.Spider):
 
                 # 精简一下小说目录
                 tempindex[title].append(chapter[1])
+
+
                 # 输出成文本
                 # with open('%s—%s.txt' % (title,chapter[1]), 'w', encoding='utf-8') as f:
                 #     f.write(self.reglux(full_text, temp_re, False)[0])
 
         # todo 这一步已经可以整理入库了
-        response.meta["item"]['小说正文'] = res_list
-        response.meta["item"]['小说目录'] = tempindex
         item = wenku8Item()
         item['novelName'] = response.meta["item"]['书名']
         item['writer'] = response.meta["item"]['作者']
@@ -142,11 +142,22 @@ class Wenku8Spider(scrapy.Spider):
         item['intro'] = response.meta["item"]['简介']
         item['headerImage'] = response.meta["item"]['封面']
         item['resWorksNum'] = response.meta["item"]['全书字数']
-        item['indexMenus'] = response.meta["item"]['小说目录']
+        # item['indexMenus'] = tempindex
         item['types'] = response.meta["item"]['类型']
         item['action'] = response.meta["item"]['文章状态']
-        item['temps'] = response.meta["item"]['小说正文']
         yield item
+
+        item = wenku8ChapterItem()
+        for i in res_list:
+            item['name'] = i['所属小说']
+            item['novel_title'] = i['卷名']
+            item['chapter'] = i['章节名']
+            item['worksNum'] = i['章节字数']
+            item['container'] = i['正文']
+            item['updateTime'] = i['更新时间']
+            item['chapterImgurls'] = i['章节插画']
+            yield item
+
 
 
     def CheckRe(self,tempStr):
