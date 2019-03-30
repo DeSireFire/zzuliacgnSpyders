@@ -47,7 +47,7 @@ class Wenku8Spider(scrapy.Spider):
             '简介':self.reglux(response.text, self.novel_intro,False)[0],
             '封面':self.reglux(response.text, self.novel_headerImage,False)[0],
             '全书字数':0,
-            '类型':'轻小说',
+            '类型':'14',# 轻小说 id 14
             # '字数':self.reglux(response.text, self.novel_worksNum,False)[0],
             '文章状态':self.reglux(response.text, self.novel_action,False)[0],
             '小说目录':self.reglux(response.text, self.index_url,False)[0],
@@ -128,33 +128,46 @@ class Wenku8Spider(scrapy.Spider):
                 # 精简一下小说目录
                 tempindex[title].append(chapter[1])
 
-                item = wenku8ChapterItem()
-                item['name'] = temp_dict['所属小说']
-                item['novel_title'] = temp_dict['卷名']
-                item['chapter'] = temp_dict['章节名']
-                item['worksNum'] = temp_dict['章节字数']
+                # item = wenku8ChapterItem()
+                # item['name'] = temp_dict['所属小说']
+                # item['title'] = temp_dict['卷名']
+                # item['chapter'] = temp_dict['章节名']
+                # item['fullName'] = '{name}_{title}_{chapter}'.format(name = temp_dict['所属小说'],title = temp_dict['卷名'],chapter = temp_dict['章节名'])
+                # item['worksNum'] = str(temp_dict['章节字数'])
                 # item['container'] = temp_dict['正文']
-                item['updateTime'] = temp_dict['更新时间']
-                item['chapterImgurls'] = temp_dict['章节插画']
-                yield item
+                # item['updateTime'] = temp_dict['更新时间']
+                # item['chapterImgurls'] = temp_dict['章节插画']
+                # item['isdelete'] = 0
+                # yield item
 
                 # 输出成文本
                 # with open('%s—%s.txt' % (title,chapter[1]), 'w', encoding='utf-8') as f:
                 #     f.write(self.reglux(full_text, temp_re, False)[0])
-
-        item = wenku8Item()
-        item['novelName'] = response.meta["item"]['书名']
-        item['writer'] = response.meta["item"]['作者']
-        item['illustrator'] = response.meta["item"]['插画师']
-        item['fromPress'] = response.meta["item"]['文库名']
-        item['intro'] = response.meta["item"]['简介']
-        item['headerImage'] = response.meta["item"]['封面']
-        item['resWorksNum'] = response.meta["item"]['全书字数']
-        # item['indexMenus'] = tempindex
-        item['types'] = response.meta["item"]['类型']
-        item['action'] = response.meta["item"]['文章状态']
+        #
+        # item = wenku8Item()
+        # item['novelName'] = response.meta["item"]['书名']
+        # item['writer'] = response.meta["item"]['作者']
+        # item['illustrator'] = response.meta["item"]['插画师']
+        # item['fromPress'] = response.meta["item"]['文库名']
+        # item['intro'] = response.meta["item"]['简介']
+        # item['headerImage'] = response.meta["item"]['封面']
+        # item['resWorksNum'] = str(response.meta["item"]['全书字数'])
+        # item['types_id'] = response.meta["item"]['类型']
+        # item['action'] = response.meta["item"]['文章状态']
+        # item['isdelete'] = 0
+        # yield item
+        item = wenku8ChapterItem()
+        item['name'] = temp_dict['所属小说']
+        item['title'] = temp_dict['卷名']
+        item['chapter'] = temp_dict['章节名']
+        item['fullName'] = '{name}_{title}_{chapter}'.format(name=temp_dict['所属小说'], title=temp_dict['卷名'],
+                                                             chapter=temp_dict['章节名'])
+        item['worksNum'] = str(temp_dict['章节字数'])
+        item['container'] = temp_dict['正文']
+        item['updateTime'] = temp_dict['更新时间']
+        item['chapterImgurls'] = temp_dict['章节插画']
+        item['isdelete'] = 0
         yield item
-
 
 
 
