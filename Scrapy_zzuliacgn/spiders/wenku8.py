@@ -47,7 +47,7 @@ class Wenku8Spider(scrapy.Spider):
             '简介':self.reglux(response.text, self.novel_intro,False)[0],
             '封面':self.reglux(response.text, self.novel_headerImage,False)[0],
             '全书字数':0,
-            '类型':'14',# 轻小说 id 14
+            '类型':14,# 轻小说 id 14
             # '字数':self.reglux(response.text, self.novel_worksNum,False)[0],
             '文章状态':self.reglux(response.text, self.novel_action,False)[0],
             '小说目录':self.reglux(response.text, self.index_url,False)[0],
@@ -134,9 +134,9 @@ class Wenku8Spider(scrapy.Spider):
                 # item['chapter'] = temp_dict['章节名']
                 # item['fullName'] = '{name}_{title}_{chapter}'.format(name = temp_dict['所属小说'],title = temp_dict['卷名'],chapter = temp_dict['章节名'])
                 # item['worksNum'] = str(temp_dict['章节字数'])
-                # item['container'] = temp_dict['正文']
                 # item['updateTime'] = temp_dict['更新时间']
                 # item['chapterImgurls'] = temp_dict['章节插画']
+                # item['container'] = temp_dict['正文']
                 # item['isdelete'] = 0
                 # yield item
 
@@ -156,19 +156,18 @@ class Wenku8Spider(scrapy.Spider):
         # item['action'] = response.meta["item"]['文章状态']
         # item['isdelete'] = 0
         # yield item
+
         item = wenku8ChapterItem()
         item['name'] = temp_dict['所属小说']
         item['title'] = temp_dict['卷名']
         item['chapter'] = temp_dict['章节名']
-        item['fullName'] = '{name}_{title}_{chapter}'.format(name=temp_dict['所属小说'], title=temp_dict['卷名'],
-                                                             chapter=temp_dict['章节名'])
+        item['fullName'] = '{name}_{title}_{chapter}'.format(name = temp_dict['所属小说'],title = temp_dict['卷名'],chapter = temp_dict['章节名'])
         item['worksNum'] = str(temp_dict['章节字数'])
-        item['container'] = temp_dict['正文']
         item['updateTime'] = temp_dict['更新时间']
         item['chapterImgurls'] = temp_dict['章节插画']
+        item['container'] = temp_dict['正文']
         item['isdelete'] = 0
         yield item
-
 
 
 

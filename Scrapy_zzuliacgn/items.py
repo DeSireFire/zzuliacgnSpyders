@@ -80,7 +80,7 @@ class wenku8ChapterItem(scrapy.Item):
     chapter = scrapy.Field() # 章节名
     fullName = scrapy.Field() # 章节全称（用于防止重复，唯一约束）
     worksNum = scrapy.Field() # 章节字数
-    container = scrapy.Field() # 正文
     updateTime = scrapy.Field()  # 小说更新时间，最新的章节时间为更新时间
     chapterImgurls = scrapy.Field() # 该章节的插画
+    container = scrapy.Field() # 正文
     isdelete = scrapy.Field()  # 资源详细页地址

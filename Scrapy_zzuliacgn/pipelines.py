@@ -69,7 +69,9 @@ class mysqlPipeline(object):
         myvalues = ",".join(['%s'] * len(data))
         myUpdate = ",".join([" {key} = %s".format(key=key) for key in data])
         sql = "INSERT INTO {table}({keys}) VALUES ({values}) ON DUPLICATE KEY UPDATE".format(table=tableName,keys=mykeys,values=myvalues)
+        print(sql)
         sql += myUpdate
+        print(sql)
         try:
             if self.cursor.execute(sql, tuple(data.values()) * 2):
                 print("更新成功！")
