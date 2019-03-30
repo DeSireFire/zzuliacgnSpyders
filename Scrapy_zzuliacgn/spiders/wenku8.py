@@ -86,7 +86,6 @@ class Wenku8Spider(scrapy.Spider):
         keys_list = list(response.meta["item"]['小说目录'])
         values_list = list(response.meta["item"]['小说目录'].values())
 
-        res_list = []
         tempindex = {}
         # todo 有机会可以试试用迭代器实现
         for title,chapters in zip(keys_list,values_list):
@@ -121,9 +120,6 @@ class Wenku8Spider(scrapy.Spider):
                 if temp_dict['正文'] == '\r\n\r\n\r\n\r\n':
                     temp_dict['章节名'] = '本册插画'
                     temp_dict['正文'] = '本册插画'
-
-
-                res_list.append(temp_dict)
 
                 # 精简一下小说目录
                 tempindex[title].append(chapter[1])
