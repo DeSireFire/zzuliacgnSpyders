@@ -52,15 +52,15 @@ class nyaaItem(scrapy.Item):
     isdelete = scrapy.Field()#资源详细页地址
 
 class wenku8Item(scrapy.Item):
-    novelName = scrapy.Field() # 小说名
-    writer = scrapy.Field() # 作者名
-    illustrator = scrapy.Field() # 插画师名
+    novelName = scrapy.Field()  # 小说名
+    writer = scrapy.Field()  # 作者名
+    illustrator = scrapy.Field()    # 插画师名
     fromPress = scrapy.Field()  # 文库名
-    intro = scrapy.Field() # 小说简介
-    headerImage = scrapy.Field() # 小说封面
-    resWorksNum = scrapy.Field() # 小说字数
-    types_id = scrapy.Field() #小说所属类型
-    action = scrapy.Field() # 连载状态
+    intro = scrapy.Field()  # 小说简介
+    headerImage = scrapy.Field()    # 小说封面
+    resWorksNum = scrapy.Field()    # 小说字数
+    types_id = scrapy.Field()   #小说所属类型
+    action = scrapy.Field()    # 连载状态
     isdelete = scrapy.Field()  # 资源详细页地址
     # saveTime = scrapy.Field() # 小说收录时间,最旧的章节时间为收录时间
 
