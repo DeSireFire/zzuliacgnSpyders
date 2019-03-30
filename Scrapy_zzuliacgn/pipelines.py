@@ -44,13 +44,14 @@ class mysqlPipeline(object):
             print('老子是nyaa的管道，我感受到了力量')
             self.mysql_insert_IGNORE(item, 'ZA_BT_items')
         elif spider.name == 'wenku8':
-            print('老子是wenku8的管道，我感受到了力量')
-            if 'writer' in dict(item).keys():
-                print('是小说主表')
-                self.mysql_insert_update(item, 'ZA_Novel_info')
-            else:
-                print('是小说章节表')
-                self.mysql_insert_update(item, 'ZA_Novel_detail')
+            # print('老子是wenku8的管道，我感受到了力量')
+            # if 'writer' in dict(item).keys():
+            #     print('是小说主表')
+            #     self.mysql_insert_update(item, 'ZA_Novel_info')
+            # else:
+            #     print('是小说章节表')
+            #     self.mysql_insert_update(item, 'ZA_Novel_detail')
+            self.mysql_insert_update(item, 'ZA_Novel_detail')
         else:
             print("我是谁，我在哪，我在做什么")
         return item
@@ -64,14 +65,12 @@ class mysqlPipeline(object):
         :return:
         '''
         data = dict(item)
-        print(type(data))
+        # print(type(data))
         mykeys = ",".join(data.keys())
         myvalues = ",".join(['%s'] * len(data))
         myUpdate = ",".join([" {key} = %s".format(key=key) for key in data])
         sql = "INSERT INTO {table}({keys}) VALUES ({values}) ON DUPLICATE KEY UPDATE".format(table=tableName,keys=mykeys,values=myvalues)
-        print(sql)
         sql += myUpdate
-        print(sql)
         try:
             if self.cursor.execute(sql, tuple(data.values()) * 2):
                 print("更新成功！")

@@ -19,6 +19,7 @@ class DmhySpider(scrapy.Spider):
     re_info = '<strong>簡介:&nbsp;</strong>([\s\S]*?)<a name="description-end"></a>'
     re_magnet1 = '<aclass="magnet"id="a_magnet"href="([\s\S]*?)">([\s\S]*?)</a>'
     re_magnet2 = '<aid="magnet2"href="([\s\S]*?)">([\s\S]*?)</a>'
+    re_FileList = '<div class="file_list">([\s\S]*?)</div>'
     re_UDO_DATA = '<tdnowrap="nowrap"align="center"><spanclass="btl_1">([\s\S]*?)</span></td><tdnowrap="nowrap"align="center"><spanclass="bts_1">([\s\S]*?)</span></td><tdnowrap="nowrap"align="center">([\s\S]*?)</td><tdalign="center"><ahref="([\s\S]*?)">([\s\S]*?)</a></td>'
     # 该爬虫所用的数据库信息
     custom_settings = dmhy
