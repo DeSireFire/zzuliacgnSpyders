@@ -45,8 +45,13 @@ class mysqlPipeline(object):
             self.mysql_insert_IGNORE(item, 'ZA_BT_items')
         elif spider.name == 'wenku8':
             print('老子是wenku8的管道，我感受到了力量')
-            print(item)
-            # self.mysql_insert_IGNORE(item, 'ZA_BT_items')
+            print(dict(item).keys())
+            if 'writer' in dict(item).keys():
+                print('是小说主表')
+                self.mysql_insert_IGNORE(item, 'ZA_Novel_info')
+            else:
+                print('是小说章节表')
+                self.mysql_insert_IGNORE(item, 'ZA_Novel_detail')
         else:
             print("我是谁，我在哪，我在做什么")
         return item

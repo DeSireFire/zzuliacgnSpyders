@@ -65,7 +65,7 @@ class wenku8Item(scrapy.Item):
 
     # saveTime = scrapy.Field() # 小说收录时间,最旧的章节时间为收录时间
 
-class wenku8ChapterItem:
+class wenku8ChapterItem(scrapy.Item):
     '''
     思路记录：
     由于小说主体内容过大，所以不适合保存在后端服务器；
@@ -76,11 +76,10 @@ class wenku8ChapterItem:
 
     狗屁，真难，存是能存了，增量更新如何解决？？
     '''
-
     name = scrapy.Field() # 所属书名
     novel_title = scrapy.Field() # 小说册名
     chapter = scrapy.Field() # 章节名
     worksNum = scrapy.Field() # 章节字数
-    container = scrapy.Field() # 正文
+    # container = scrapy.Field() # 正文
     updateTime = scrapy.Field()  # 小说更新时间，最新的章节时间为更新时间
     chapterImgurls = scrapy.Field() # 该章节的插画

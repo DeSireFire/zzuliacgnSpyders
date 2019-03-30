@@ -128,12 +128,20 @@ class Wenku8Spider(scrapy.Spider):
                 # 精简一下小说目录
                 tempindex[title].append(chapter[1])
 
+                item = wenku8ChapterItem()
+                item['name'] = temp_dict['所属小说']
+                item['novel_title'] = temp_dict['卷名']
+                item['chapter'] = temp_dict['章节名']
+                item['worksNum'] = temp_dict['章节字数']
+                # item['container'] = temp_dict['正文']
+                item['updateTime'] = temp_dict['更新时间']
+                item['chapterImgurls'] = temp_dict['章节插画']
+                yield item
 
                 # 输出成文本
                 # with open('%s—%s.txt' % (title,chapter[1]), 'w', encoding='utf-8') as f:
                 #     f.write(self.reglux(full_text, temp_re, False)[0])
 
-        # todo 这一步已经可以整理入库了
         item = wenku8Item()
         item['novelName'] = response.meta["item"]['书名']
         item['writer'] = response.meta["item"]['作者']
@@ -147,16 +155,7 @@ class Wenku8Spider(scrapy.Spider):
         item['action'] = response.meta["item"]['文章状态']
         yield item
 
-        item = wenku8ChapterItem()
-        for i in res_list:
-            item['name'] = i['所属小说']
-            item['novel_title'] = i['卷名']
-            item['chapter'] = i['章节名']
-            item['worksNum'] = i['章节字数']
-            item['container'] = i['正文']
-            item['updateTime'] = i['更新时间']
-            item['chapterImgurls'] = i['章节插画']
-            yield item
+
 
 
 
