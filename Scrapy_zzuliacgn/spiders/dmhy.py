@@ -3,13 +3,26 @@ import scrapy,re,random
 from Scrapy_zzuliacgn.items import dmhyItem
 from Scrapy_zzuliacgn.customSettings import dmhy
 
+header = {
+        'accept':'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8',
+        'accept-encoding':'gzip, deflate, br',
+        'accept-language':'zh-CN,zh;q=0.9,en;q=0.8',
+        'cache-control':'no-cache',
+        'cookie':'__cfduid=d77f9b79b0b6b219a0ad6fe8a2b50e66f1537325521; HstCfa3801674=1537325526766; __dtsu=D9E9B66B48D0635C6D22B12A024449B3; HstCmu3801674=1551514727566; Hm_lvt_e4918ccc327a268ee93dac21d5a7d53c=1551596463; c_ref_3801674=http%3A%2F%2F192.168.0.102%3A5360%2Fresourcedownload%2FitemInfo%2FYSLBP6PZMTCTLJ76NQR2DSSG7BV7HG44nyaYaNyaDHR_Ueno-san_wa_Bukiyou_09_1080P_MP4.html; HstPn3801674=1; BB_plg=pm; Hm_lvt_e4918ccc327a268ee93dac21d5a7d53c=1551596463; Hm_lpvt_e4918ccc327a268ee93dac21d5a7d53c=1554009609; bbl=1; HstCla3801674=1554009609062; HstPt3801674=72; HstCnv3801674=27; HstCns3801674=36',
+        'pragma':'no-cache',
+        'upgrade-insecure-requests':'1',
+        'user-agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/69.0.3497.100 Safari/537.36',
+},
+
 class DmhySpider(scrapy.Spider):
     '''
     流程： 首先向start_urls地址发送请求，得到的response都会返回到函数parse,通过选择器抓取响应的内容，然后再获取下一页的地址，发送请求。
     '''
     name = "dmhy"
-    allowed_domains = ["share.dmhy.org"]
-    start_urls = ['https://share.dmhy.org']
+    # allowed_domains = ["share.dmhy.org"]
+    # start_urls = ['https://share.dmhy.org/topics/list/page/1']
+    allowed_domains = ["httpbin.org"]
+    start_urls = ['https://httpbin.org/get?show_env=1']
 
     re_infoURL = '<ahref="/topics/view/([\s\S]*?)"target="_blank">'
     re_time = '<li>發佈時間:<span>([\s\S]*?)</span></li>'
@@ -24,8 +37,12 @@ class DmhySpider(scrapy.Spider):
     # 该爬虫所用的数据库信息
     custom_settings = dmhy
 
+    def start_requests(self):
+        yield scrapy.Request(self.start_urls[0], headers=header)
+
     def parse(self, response):
         a_i_u_e_o = response.text
+        print(a_i_u_e_o)
         ha_hi_fu_he_ho = list(map(lambda x: self.getDMHY_types('viewInfoURL') + x, self.re_DMHY(a_i_u_e_o, self.re_infoURL)))
         sa_shi_su_se_so = self.re_DMHY(a_i_u_e_o, self.re_type)
         UDOs = self.re_DMHY(a_i_u_e_o, self.re_UDO_DATA)
