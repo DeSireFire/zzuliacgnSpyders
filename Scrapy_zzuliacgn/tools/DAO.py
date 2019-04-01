@@ -8,7 +8,7 @@ connect_dict = {
     # "user":DATABASES["default"]["USER"],
     # "passwd":DATABASES["default"]["PASSWORD"],
     # "db":DATABASES["default"]["NAME"],
-    "host": '192.168.0.102',
+    "host": '192.168.37.128',
     "port": 3306,
     "user": 'zzuliACGN',
     "passwd": 'DeSireFire233notRoot',

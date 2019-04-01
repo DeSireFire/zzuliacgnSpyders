@@ -55,7 +55,8 @@ SPIDER_MIDDLEWARES = {
 # Enable or disable downloader middlewares
 # See http://scrapy.readthedocs.org/en/latest/topics/downloader-middleware.html
 DOWNLOADER_MIDDLEWARES = {
-    'Scrapy_zzuliacgn.middlewares.RandomUserAgentMiddleware': 543,
+    'Scrapy_zzuliacgn.middlewares.RandomUserAgentMiddleware': 554,
+    'Scrapy_zzuliacgn.middlewares.ProxyMiddleware': 555,
 }
 
 # Enable or disable extensions
@@ -95,11 +96,12 @@ HTTPCACHE_STORAGE = 'scrapy.extensions.httpcache.FilesystemCacheStorage'
 
 # 修改编码为utf-8
 # FEED_EXPORT_ENCODING = 'utf-8'
+# FEED_EXPORT_ENCODING = 'GB2312'
 
 # 数据库信息
 # MYSQL配置
 # 默认
-MYSQL_HOST = '192.168.0.103' # 数据库地址
+MYSQL_HOST = '192.168.37.128' # 数据库地址
 MYSQL_DATABASE = 'zzuli_ACGN' # 数据库名
 MYSQL_USER = 'zzuliACGN'
 MYSQL_PASSWORD = 'DeSireFire233notRoot'
@@ -107,4 +109,4 @@ MYSQL_PORT = 3306
 
 
 # 代理设置
-PROXY_URL = 'http://localhost:5555/random'
+PROXY_URL = 'http://www.zzuliacgn.com:8000/?types=0&count=100&country=国外'

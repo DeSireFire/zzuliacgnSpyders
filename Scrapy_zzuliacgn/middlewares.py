@@ -113,13 +113,23 @@ class ProxyMiddleware():
     def __init__(self, proxy_url):
         self.logger = logging.getLogger(__name__)
         self.proxy_url = proxy_url
-
+# todo 中间件有待调整！
     def get_random_proxy(self):
         try:
             response = requests.get(self.proxy_url)
-            if response.status_code == 200:
-                proxy = response.text
-                return proxy
+            proxyList = json.loads(response.text)
+            for temp in proxyList:
+                proxies = {
+                    "http": "http://%s:%s"%(temp[0],temp[1]),
+                    "https": "http://%s:%s"%(temp[0],temp[1]),
+                }
+                response2 = requests.get('https://share.dmhy.org/',proxies = proxies)
+                self.logger.debug(response2)
+                self.logger.debug(response2.text)
+                if response2.status_code == 200:
+                    proxy = '{ip}:{port}'.format(ip=temp[0],port = temp[1])
+                    self.logger.debug('使用代理 %s' % proxy)
+                    return proxy
         except requests.ConnectionError:
             return False
 
@@ -128,9 +138,10 @@ class ProxyMiddleware():
         if request.meta.get('retry_times'):
             proxy = self.get_random_proxy()
             if proxy:
-                uri = 'https://{proxy}'.format(proxy=proxy)
+                url = 'https://{proxy}'.format(proxy=proxy)
+                print(url)
                 self.logger.debug('使用代理 %s'%proxy)
-                request.meta['proxy'] = uri
+                request.meta['proxy'] = url
 
     @classmethod
     def from_crawler(cls, crawler):
