@@ -55,22 +55,22 @@ SPIDER_MIDDLEWARES = {
 # Enable or disable downloader middlewares
 # See http://scrapy.readthedocs.org/en/latest/topics/downloader-middleware.html
 DOWNLOADER_MIDDLEWARES = {
-    'scrapy.downloadermiddlewares.robotstxt.RobotsTxtMiddleware': 100,
-    'scrapy.downloadermiddlewares.httpauth.HttpAuthMiddleware': 300,
-    'scrapy.downloadermiddlewares.downloadtimeout.DownloadTimeoutMiddleware': 350,
-    'scrapy.downloadermiddlewares.defaultheaders.DefaultHeadersMiddleware': 400,
-    'scrapy.downloadermiddlewares.useragent.UserAgentMiddleware': 500,
-    'scrapy.downloadermiddlewares.retry.RetryMiddleware': 550,
-    'scrapy.downloadermiddlewares.ajaxcrawl.AjaxCrawlMiddleware': 560,
-    'scrapy.downloadermiddlewares.redirect.MetaRefreshMiddleware': 580,
-    'scrapy.downloadermiddlewares.httpcompression.HttpCompressionMiddleware': 590,
-    'scrapy.downloadermiddlewares.redirect.RedirectMiddleware': 600,
-    'scrapy.downloadermiddlewares.cookies.CookiesMiddleware': 700,
-    'scrapy.downloadermiddlewares.httpproxy.HttpProxyMiddleware': 750,
-    'scrapy.downloadermiddlewares.stats.DownloaderStats': 850,
-    'scrapy.downloadermiddlewares.httpcache.HttpCacheMiddleware': 900,
+    # 'scrapy.downloadermiddlewares.robotstxt.RobotsTxtMiddleware': 100,
+    # 'scrapy.downloadermiddlewares.httpauth.HttpAuthMiddleware': 300,
+    # 'scrapy.downloadermiddlewares.downloadtimeout.DownloadTimeoutMiddleware': 350,
+    # 'scrapy.downloadermiddlewares.defaultheaders.DefaultHeadersMiddleware': 400,
+    # 'scrapy.downloadermiddlewares.useragent.UserAgentMiddleware': 500,
+    # 'scrapy.downloadermiddlewares.retry.RetryMiddleware': 550,
+    # 'scrapy.downloadermiddlewares.ajaxcrawl.AjaxCrawlMiddleware': 560,
+    # 'scrapy.downloadermiddlewares.redirect.MetaRefreshMiddleware': 580,
+    # 'scrapy.downloadermiddlewares.httpcompression.HttpCompressionMiddleware': 590,
+    # 'scrapy.downloadermiddlewares.redirect.RedirectMiddleware': 600,
+    # 'scrapy.downloadermiddlewares.cookies.CookiesMiddleware': 700,
+    # 'scrapy.downloadermiddlewares.httpproxy.HttpProxyMiddleware': 750,
+    # 'scrapy.downloadermiddlewares.stats.DownloaderStats': 850,
+    # 'scrapy.downloadermiddlewares.httpcache.HttpCacheMiddleware': 900,
     'Scrapy_zzuliacgn.middlewares.RandomUserAgentMiddleware': 554,
-    'Scrapy_zzuliacgn.middlewares.ProxyMiddleware': 555,
+    # 'Scrapy_zzuliacgn.middlewares.ProxyMiddleware': 555,
 }
 
 # Enable or disable extensions
