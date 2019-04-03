@@ -70,7 +70,7 @@ DOWNLOADER_MIDDLEWARES = {
     # 'scrapy.downloadermiddlewares.stats.DownloaderStats': 850,
     # 'scrapy.downloadermiddlewares.httpcache.HttpCacheMiddleware': 900,
     'Scrapy_zzuliacgn.middlewares.RandomUserAgentMiddleware': 554,
-    # 'Scrapy_zzuliacgn.middlewares.ProxyMiddleware': 555,
+    'Scrapy_zzuliacgn.middlewares.ProxyMiddleware': 555,
 }
 
 # Enable or disable extensions
@@ -90,10 +90,10 @@ ITEM_PIPELINES = {
 #AUTOTHROTTLE_ENABLED = True
 # The initial download delay
 # 初始下载延迟
-AUTOTHROTTLE_START_DELAY = 60
+# AUTOTHROTTLE_START_DELAY = 60
 # The maximum download delay to be set in case of high latencies
 # 在高延迟的情况下设置的最大下载延迟
-AUTOTHROTTLE_MAX_DELAY = 240
+# AUTOTHROTTLE_MAX_DELAY = 240
 # The average number of requests Scrapy should be sending in parallel to
 # each remote server
 #AUTOTHROTTLE_TARGET_CONCURRENCY = 1.0
@@ -126,4 +126,4 @@ MYSQL_PORT = 3306
 PROXY_URL = 'http://192.168.37.128:5010/get/'
 
 
-RETRY_TIMES = 100
+RETRY_TIMES = 10
