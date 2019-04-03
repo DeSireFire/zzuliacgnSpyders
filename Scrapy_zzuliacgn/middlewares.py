@@ -116,24 +116,20 @@ class ProxyMiddleware():
 # todo 中间件有待调整！
     def get_random_proxy(self):
         try:
-            response = requests.get(self.proxy_url)
-            proxyList = json.loads(response.text)
-            for temp in proxyList:
-                proxies = {
-                    "http": "http://%s:%s"%(temp[0],temp[1]),
-                    "https": "http://%s:%s"%(temp[0],temp[1]),
-                }
-                response2 = requests.get('https://share.dmhy.org/',proxies = proxies)
-                self.logger.debug(response2)
-                self.logger.debug(response2.text)
-                if response2.status_code == 200:
-                    proxy = '{ip}:{port}'.format(ip=temp[0],port = temp[1])
-                    self.logger.debug('使用代理 %s' % proxy)
-                    return proxy
+            response = requests.get(self.proxy_url)# 获取代理池IP
+            if response.status_code == 200 and 'no' not in response.text:
+                return response.text
         except requests.ConnectionError:
             return False
 
-
+    # 强制使用代理
+    # def process_request(self, request, spider):
+    #     proxy = self.get_random_proxy(request)
+    #     if proxy:
+    #         url = 'https://{proxy}'.format(proxy=proxy)
+    #         self.logger.debug('使用代理 %s'%proxy)
+    #         request.meta['proxy'] = url
+    # 重试时使用代理
     def process_request(self, request, spider):
         if request.meta.get('retry_times'):
             proxy = self.get_random_proxy()
