@@ -26,12 +26,12 @@ class Wenku8Spider(scrapy.Spider):
     # 该爬虫所用的settings信息
     custom_settings = wenku8
 
-    def start_requests(self):
-        url = 'https://www.wenku8.net/book/{num}.htm'
-
-        for i in range(1, 5):
-            print(url.format(num = i))
-            yield scrapy.Request(url.format(num = i), callback=self.parse)
+    # def start_requests(self):
+    #     url = 'https://www.wenku8.net/book/{num}.htm'
+    #
+    #     for i in range(0, 5):
+    #         # print(url.format(num = i))
+    #         yield scrapy.Request(url.format(num = i), callback=self.parse)
 
     def parse(self, response):
         main_dict = {
@@ -48,7 +48,17 @@ class Wenku8Spider(scrapy.Spider):
             '小说目录':self.reglux(response.text, self.index_url,False)[0],
             '小说全本地址':'http://dl.wkcdn.com/txtutf8{num}.txt'.format(num = self.reglux(response.text, self.index_url,False)[0][28:-10]),
         }
-        yield scrapy.Request(url=main_dict["小说目录"], callback=self.index_info, meta={"item": main_dict})
+        # yield scrapy.Request(url=main_dict["小说目录"], callback=self.index_info, meta={"item": main_dict})
+
+        # 下一页
+        # todo ID15的小说丢失，推测是网站原因，需要思考解决方案
+        if "出现错误" not in response.text:
+            _next = "{num}.htm".format(num = str(int(response.url[28:-4])+1))
+            url = response.urljoin(_next)
+            print(url)
+            yield scrapy.Request(url, callback=self.parse)
+        else:
+            print('页面出现错误！爬虫停止')
 
     def index_info(self, response):
         '''

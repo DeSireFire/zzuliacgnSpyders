@@ -46,24 +46,24 @@ class DmhySpider(scrapy.Spider):
             yield scrapy.Request(url=rec_dict["详情URL"], callback=self.infoView, meta={"item": rec_dict})
         _next = response.css('.nav_title .fl a::attr("href")').extract()
         # 采集下一页的地址，如果有两个元素说明为存在上下页地址
-        # if len(_next) == 2 :
-        #     _next = _next[1] # 第二个元素必为下一页地址
-        #     url = response.urljoin(_next)
-        #     yield scrapy.Request(url=url,callback=self.parse,dont_filter=False)
-        # else:
-        #     if response.url == 'https://share.dmhy.org':
-        #         _next = _next[0]
-        #     # 当前url和next的URL的尾数字是否相同
-        #         url = response.urljoin(_next)
-        #         yield scrapy.Request(url=url,callback=self.parse,dont_filter=False)
-        #     else:
-        #         if int(response.url.split('/')[-1]) >= int(_next[0].split('/')[-1]):
-        #             # 爬取到底页，回到页首
-        #             # _next = 'https://www.dmhy.org'
-        #             print('爬取结束')
-        # print(_next)
-        # url = response.urljoin(_next)
-        # yield scrapy.Request(url=url,callback=self.parse,dont_filter=False)
+        if len(_next) == 2 :
+            _next = _next[1] # 第二个元素必为下一页地址
+            url = response.urljoin(_next)
+            yield scrapy.Request(url=url,callback=self.parse,dont_filter=False)
+        else:
+            if response.url == 'https://share.dmhy.org':
+                _next = _next[0]
+            # 当前url和next的URL的尾数字是否相同
+                url = response.urljoin(_next)
+                yield scrapy.Request(url=url,callback=self.parse,dont_filter=False)
+            else:
+                if int(response.url.split('/')[-1]) >= int(_next[0].split('/')[-1]):
+                    # 爬取到底页，回到页首
+                    # _next = 'https://www.dmhy.org'
+                    print('爬取结束')
+        print(_next)
+        url = response.urljoin(_next)
+        yield scrapy.Request(url=url,callback=self.parse,dont_filter=False)
 
 
     def infoView(self, response):
