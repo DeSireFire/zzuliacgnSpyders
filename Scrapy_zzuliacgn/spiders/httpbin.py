@@ -10,5 +10,9 @@ class HttpbinSpider(scrapy.Spider):
     allowed_domains = ["httpbin.org"]
     start_urls = ['http://httpbin.org/get']
 
+    def start_requests(self):
+        self.start_urls[0] = str(input("输入爬取的网址:"))
+        yield scrapy.Request( self.start_urls[0], callback=self.parse)
+
     def parse(self, response):
         self.logger.debug(response.text)

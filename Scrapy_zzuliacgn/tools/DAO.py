@@ -342,7 +342,9 @@ def main():
         print("*" * 50)
         # # 删除表数据并重置ID
         # Refresh_ID(db, "ZA_BT_rtypes")
-        Refresh_ID(db, "ZA_BT_items")
+        # Refresh_ID(db, "ZA_BT_items")
+        Refresh_ID(db, "ZA_Novel_detail")
+        Refresh_ID(db, "ZA_Novel_info")
         print("*" * 50)
         # 查询
 

@@ -26,17 +26,12 @@ class Wenku8Spider(scrapy.Spider):
     # 该爬虫所用的settings信息
     custom_settings = wenku8
 
-    # 检测custom_settings中爱信息图床的头部是否可用
-    # if not logining(aixinxi_header):
-    #     print('爱信息图床登陆状态不正常！')
-    #     aixinxi_header = login()
-    #     print(aixinxi_header)
-    # else:
-    #     print('爱信息图床登陆状态正常！')
-    # def start_requests(self):
-    #     url = 'https://www.wenku8.net/book/{num}.htm'
-    #     for i in range(1, 2):
-    #         yield scrapy.Request(url.format(i), callback=self.parse)
+    def start_requests(self):
+        url = 'https://www.wenku8.net/book/{num}.htm'
+
+        for i in range(1, 5):
+            print(url.format(num = i))
+            yield scrapy.Request(url.format(num = i), callback=self.parse)
 
     def parse(self, response):
         main_dict = {
