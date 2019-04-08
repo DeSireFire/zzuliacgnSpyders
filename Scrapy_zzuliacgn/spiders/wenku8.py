@@ -33,8 +33,7 @@ class Wenku8Spider(scrapy.Spider):
         nextUrl = response.urljoin(_next)
         if "出现错误" not in response.text and self.end_check_times <= 5:  # 不出现“出现错误”同时错误尝试次数小于5
             if '版权' in response.text:
-                with open('log\wenku8Copyright.txt', 'a+', encoding='utf-8') as f:
-                    f.write(response.url + "\n")
+                self.logFile('wenku8\wenku8Copyright.txt', response.url, 'a+', 'utf-8', True)
             main_dict = {
                 '书名': self.reglux(response.text, self.novel_name, False)[0],
                 '作者': self.reglux(response.text, self.novel_writer, False)[0],
@@ -58,11 +57,14 @@ class Wenku8Spider(scrapy.Spider):
             self.end_check_times += 1  # 增加一次失败次数
             print('页面出现错误！')
             # 将被删除的id记录下来
-            with open('log\wenku8Iderror.txt', 'a+', encoding='utf-8') as f:
-                f.write(response.url+"\n")
+            if self.end_check_times <= 1:
+                self.logFile('wenku8\wenku8Iderror.txt',response.url,'a+','utf-8',True)
             if self.end_check_times <= 5:
                 yield scrapy.Request(nextUrl, callback=self.parse)  # 检查下一页
             else:
+                file = open("log\wenku8\wenku8Iderror.txt",'w')
+                file.write(file.readlines()[:-6])
+                file.close()
                 print('出现错误的次数超过5次，爬虫停止！')
 
 
@@ -165,17 +167,21 @@ class Wenku8Spider(scrapy.Spider):
         item['isdelete'] = 0
         yield item
 
-    def logFile(self,FileName,content,model = 'a+',encod = 'utf-8'):
+    def logFile(self,FileName,content,model = 'a+',encod = 'utf-8',Line_break = True):
         '''
         日志打印函数
         :param FileName: 字符串，带路径和后缀的文件名
         :param content: 字符串，要记录的文本内容
         :param model: 字符串，pythonIO操作的模式,默认a+
         :param encod: 字符串，编码格式，默认utf-8
+        :param Line_break: 布尔值，是否添加换行符，默认值True
         :return:
         '''
         with open('log\{name}'.format(name = FileName), '{mode}'.format(mode = model), encoding=encod) as f:
-            f.write(content + "\n")
+            if Line_break:
+                f.write(content + "\n")
+            else:
+                f.write(content)
 
     def CheckRe(self,tempStr):
         '''
