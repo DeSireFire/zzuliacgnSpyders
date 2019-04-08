@@ -7,9 +7,8 @@ from Scrapy_zzuliacgn.items import wenku8Item,wenku8ChapterItem
 class Wenku8Spider(scrapy.Spider):
     name = "wenku8"
     allowed_domains = ["wenku8.net","wkcdn.com","httporg.bin"]
-    start_urls = ['https://www.wenku8.net/book/1.htm']
-    # start_urls = ['https://www.wenku8.net/book/754.htm']
-    # todo 2019-04-08 23:25:28 [scrapy.spidermiddlewares.httperror] INFO: Ignoring response <400 https://www.wenku8.net/book/754.htm>: HTTP status code is not handled or not allowed
+    # start_urls = ['https://www.wenku8.net/book/1.htm']
+    start_urls = ['https://www.wenku8.net/book/2234.htm']
 
     end_check_times = 0 # 发现“出现错误”的次数
     novel_name='e:16px; font-weight: bold; line-height: 150%"><b>([\s\S]*?)</b>'  # 小说名
@@ -28,13 +27,6 @@ class Wenku8Spider(scrapy.Spider):
 
     # 该爬虫所用的settings信息
     custom_settings = wenku8
-
-    # def start_requests(self):
-    #     url = 'https://www.wenku8.net/book/{num}.htm'
-    #
-    #     for i in range(0, 5):
-    #         # print(url.format(num = i))
-    #         yield scrapy.Request(url.format(num = i), callback=self.parse)
 
     def parse(self, response):
         # 下一页
