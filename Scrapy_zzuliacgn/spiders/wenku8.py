@@ -7,8 +7,7 @@ from Scrapy_zzuliacgn.items import wenku8Item,wenku8ChapterItem
 class Wenku8Spider(scrapy.Spider):
     name = "wenku8"
     allowed_domains = ["wenku8.net","wkcdn.com","httporg.bin"]
-    # start_urls = ['https://www.wenku8.net/book/1.htm']
-    start_urls = ['https://www.wenku8.net/book/2234.htm']
+    start_urls = ['https://www.wenku8.net/book/1.htm']
 
     end_check_times = 0 # 发现“出现错误”的次数
     novel_name='e:16px; font-weight: bold; line-height: 150%"><b>([\s\S]*?)</b>'  # 小说名
@@ -65,9 +64,6 @@ class Wenku8Spider(scrapy.Spider):
                 yield scrapy.Request(nextUrl, callback=self.parse)  # 检查下一页
             else:
                 print('出现错误的次数超过5次，爬虫停止！')
-
-
-
 
 
     def index_info(self, response):
@@ -169,8 +165,17 @@ class Wenku8Spider(scrapy.Spider):
         item['isdelete'] = 0
         yield item
 
-
-
+    def logFile(self,FileName,content,model = 'a+',encod = 'utf-8'):
+        '''
+        日志打印函数
+        :param FileName: 字符串，带路径和后缀的文件名
+        :param content: 字符串，要记录的文本内容
+        :param model: 字符串，pythonIO操作的模式,默认a+
+        :param encod: 字符串，编码格式，默认utf-8
+        :return:
+        '''
+        with open('log\{name}'.format(name = FileName), '{mode}'.format(mode = model), encoding=encod) as f:
+            f.write(content + "\n")
 
     def CheckRe(self,tempStr):
         '''
