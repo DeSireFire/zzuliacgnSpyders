@@ -112,3 +112,4 @@ __pycache__/
 .scrapy/
 Scrapy_zzuliacgn/customSettings.py
 Scrapy_zzuliacgn/tools/aixinxi_config.py
+log/

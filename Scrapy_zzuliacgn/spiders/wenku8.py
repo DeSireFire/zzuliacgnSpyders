@@ -8,7 +8,10 @@ class Wenku8Spider(scrapy.Spider):
     name = "wenku8"
     allowed_domains = ["wenku8.net","wkcdn.com","httporg.bin"]
     start_urls = ['https://www.wenku8.net/book/1.htm']
+    # start_urls = ['https://www.wenku8.net/book/754.htm']
+    # todo 2019-04-08 23:25:28 [scrapy.spidermiddlewares.httperror] INFO: Ignoring response <400 https://www.wenku8.net/book/754.htm>: HTTP status code is not handled or not allowed
 
+    end_check_times = 0 # 发现“出现错误”的次数
     novel_name='e:16px; font-weight: bold; line-height: 150%"><b>([\s\S]*?)</b>'  # 小说名
     novel_fromPress='<td width="20%">文库分类：([\s\S]*?)</td>'  # 文库分类
     novel_writer='<td width="20%">小说作者：([\s\S]*?)</td>'  # 作者名
@@ -34,31 +37,46 @@ class Wenku8Spider(scrapy.Spider):
     #         yield scrapy.Request(url.format(num = i), callback=self.parse)
 
     def parse(self, response):
-        main_dict = {
-            '书名':self.reglux(response.text, self.novel_name,False)[0],
-            '作者':self.reglux(response.text, self.novel_writer,False)[0],
-            '插画师':'暂时未知',
-            '文库名':self.reglux(response.text, self.novel_fromPress,False)[0],
-            '简介':self.reglux(response.text, self.novel_intro,False)[0],
-            '封面':self.reglux(response.text, self.novel_headerImage,False)[0],
-            '全书字数':0,
-            '类型':14,# 轻小说 id 14
-            # '字数':self.reglux(response.text, self.novel_worksNum,False)[0],
-            '文章状态':self.reglux(response.text, self.novel_action,False)[0],
-            '小说目录':self.reglux(response.text, self.index_url,False)[0],
-            '小说全本地址':'http://dl.wkcdn.com/txtutf8{num}.txt'.format(num = self.reglux(response.text, self.index_url,False)[0][28:-10]),
-        }
-        # yield scrapy.Request(url=main_dict["小说目录"], callback=self.index_info, meta={"item": main_dict})
-
         # 下一页
-        # todo ID15的小说丢失，推测是网站原因，需要思考解决方案
-        if "出现错误" not in response.text:
-            _next = "{num}.htm".format(num = str(int(response.url[28:-4])+1))
-            url = response.urljoin(_next)
-            print(url)
-            yield scrapy.Request(url, callback=self.parse)
+        _next = "{num}.htm".format(num=str(int(response.url[28:-4]) + 1))
+        nextUrl = response.urljoin(_next)
+        if "出现错误" not in response.text and self.end_check_times <= 5:  # 不出现“出现错误”同时错误尝试次数小于5
+            if '版权' in response.text:
+                with open('log\wenku8Copyright.txt', 'a+', encoding='utf-8') as f:
+                    f.write(response.url + "\n")
+            main_dict = {
+                '书名': self.reglux(response.text, self.novel_name, False)[0],
+                '作者': self.reglux(response.text, self.novel_writer, False)[0],
+                '插画师': '暂时未知',
+                '文库名': self.reglux(response.text, self.novel_fromPress, False)[0],
+                '简介': self.reglux(response.text, self.novel_intro, False)[0],
+                '封面': self.reglux(response.text, self.novel_headerImage, False)[0],
+                '全书字数': 0,
+                '类型': 14,  # 轻小说 id 14
+                # '字数':self.reglux(response.text, self.novel_worksNum,False)[0],
+                '文章状态': self.reglux(response.text, self.novel_action, False)[0],
+                '小说目录': self.reglux(response.text, self.index_url, False)[0],
+                '小说全本地址': 'http://dl.wkcdn.com/txtutf8{num}.txt'.format(
+                    num=self.reglux(response.text, self.index_url, False)[0][28:-10]),
+            }
+            # yield scrapy.Request(url=main_dict["小说目录"], callback=self.index_info, meta={"item": main_dict})
+
+            self.end_check_times = 0  # 计数初始化
+            yield scrapy.Request(nextUrl, callback=self.parse)  # 跳转回爬取函数继续
         else:
-            print('页面出现错误！爬虫停止')
+            self.end_check_times += 1  # 增加一次失败次数
+            print('页面出现错误！')
+            # 将被删除的id记录下来
+            with open('log\wenku8Iderror.txt', 'a+', encoding='utf-8') as f:
+                f.write(response.url+"\n")
+            if self.end_check_times <= 5:
+                yield scrapy.Request(nextUrl, callback=self.parse)  # 检查下一页
+            else:
+                print('出现错误的次数超过5次，爬虫停止！')
+
+
+
+
 
     def index_info(self, response):
         '''
