@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-import scrapy,re,chardet,random,datetime
+import scrapy,re,chardet,random,datetime,os.path
 # from Scrapy_zzuliacgn.tools.aixinxi_tools import *
 from Scrapy_zzuliacgn.customSettings import wenku8
 from Scrapy_zzuliacgn.items import wenku8Item,wenku8ChapterItem
@@ -33,7 +33,7 @@ class Wenku8Spider(scrapy.Spider):
         nextUrl = response.urljoin(_next)
         if "出现错误" not in response.text and self.end_check_times <= 5:  # 不出现“出现错误”同时错误尝试次数小于5
             if '版权' in response.text:
-                self.logFile('wenku8\wenku8Copyright.txt', response.url, 'a+', 'utf-8', True)
+                self.logFile(os.path.join('wenku8','wenku8Copyright.txt'), response.url, 'a+', 'utf-8', True)
             main_dict = {
                 '书名': self.reglux(response.text, self.novel_name, False)[0],
                 '作者': self.reglux(response.text, self.novel_writer, False)[0],
@@ -58,7 +58,7 @@ class Wenku8Spider(scrapy.Spider):
             print('页面出现错误！')
             # 将被删除的id记录下来
             if self.end_check_times <= 1:
-                self.logFile('wenku8\wenku8Iderror.txt',response.url,'a+','utf-8',True)
+                self.logFile(os.path.join('wenku8','wenku8Iderror.txt'),response.url,'a+','utf-8',True)
             if self.end_check_times <= 5:
                 yield scrapy.Request(nextUrl, callback=self.parse)  # 检查下一页
             else:
@@ -169,7 +169,8 @@ class Wenku8Spider(scrapy.Spider):
 
     def logFile(self,FileName,content,model = 'a+',encod = 'utf-8',Line_break = True):
         '''
-        日志打印函数
+        日志打印函数，使用示例：
+        self.logFile(os.path.join('wenku8','wenku8Copyright.txt'), response.url, 'a+', 'utf-8', True)
         :param FileName: 字符串，带路径和后缀的文件名
         :param content: 字符串，要记录的文本内容
         :param model: 字符串，pythonIO操作的模式,默认a+
@@ -177,7 +178,7 @@ class Wenku8Spider(scrapy.Spider):
         :param Line_break: 布尔值，是否添加换行符，默认值True
         :return:
         '''
-        with open('log\{name}'.format(name = FileName), '{mode}'.format(mode = model), encoding=encod) as f:
+        with open(os.path.join(os.getcwd(),'log','%s'%FileName), '{mode}'.format(mode = model), encoding=encod) as f:
             if Line_break:
                 f.write(content + "\n")
             else:
