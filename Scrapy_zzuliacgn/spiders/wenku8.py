@@ -7,8 +7,8 @@ from Scrapy_zzuliacgn.items import wenku8Item,wenku8ChapterItem
 class Wenku8Spider(scrapy.Spider):
     name = "wenku8"
     allowed_domains = ["wenku8.net","wkcdn.com","httporg.bin"]
-    start_urls = ['https://www.wenku8.net/book/601.htm']
-    # start_urls = ['https://www.wenku8.net/book/1.htm']
+    # start_urls = ['https://www.wenku8.net/book/601.htm']
+    start_urls = ['https://www.wenku8.net/book/1.htm']
 
     end_check_times = 0 # 发现“出现错误”的次数
     copyrightId = []
@@ -57,10 +57,11 @@ class Wenku8Spider(scrapy.Spider):
                 '小说全本地址': 'http://dl.wkcdn.com/txtgbk{num}.txt'.format(num=self.reglux(response.text, self.index_url, False)[0][28:-10]),
                 # '小说全本地址': 'http://dl.wkcdn.com/txtutf8{num}.txt'.format(num=self.reglux(response.text, self.index_url, False)[0][28:-10]),
             }
+            print('http://dl.wkcdn.com/txtgbk{num}.txt'.format(num=self.reglux(response.text, self.index_url, False)[0][28:-10]))
             yield scrapy.Request(url=main_dict["小说目录"], callback=self.index_info, meta={"item": main_dict})
 
             self.end_check_times = 0  # 计数初始化
-            # yield scrapy.Request(nextUrl, callback=self.parse)  # 跳转回爬取函数继续
+            yield scrapy.Request(nextUrl, callback=self.parse)  # 跳转下一页
         else: # 出现错误
             self.end_check_times += 1  # 增加一次失败次数
             print('页面出现错误！')
@@ -71,7 +72,7 @@ class Wenku8Spider(scrapy.Spider):
                 yield scrapy.Request(nextUrl, callback=self.parse)  # 检查下一页
             else:
                 self.logFile(os.path.join('wenku8', 'wenku8Iderror.txt'), sorted(set(self.errorId[:-1]),key=self.errorId[:-1].index), 'w+', 'utf-8', True)
-                self.logFile(os.path.join('wenku8', 'wenku8Copyright.txt'), list(set(self.copyrightId)), 'w+', 'utf-8', True)
+                self.logFile(os.path.join('wenku8', 'wenku8Copyright.txt'), sorted(set(self.copyrightId),key=self.errorId[:-1].index), 'w+', 'utf-8', True)
                 print('出现错误的次数超过5次，爬虫停止！')
 
 
@@ -83,8 +84,8 @@ class Wenku8Spider(scrapy.Spider):
         '''
         Chapter = self.reglux(response.text, '<tr>([\s\S]*?)</tr>',False)
         main_dict = response.meta["item"]
-        print(self.titleCuter(Chapter))
-        print(self.titleCheck(Chapter))
+        # print(self.titleCuter(Chapter))
+        # print(self.titleCheck(Chapter))
         main_dict['小说目录'] = self.titleCuter(Chapter)
         # for i in response.meta["item"]['小说目录']:
         #     print('%s:%s'%(i,response.meta["item"]['小说目录'][i]))
@@ -96,13 +97,27 @@ class Wenku8Spider(scrapy.Spider):
     def full_text(self,response):
         '''
         爬取全本小说，并对全本小说进行裁剪分章节
-
         实现思路，使用卷名和章节名称拼接正则表达式来切割小说全文本
         :param n: 遍历取对应键值中存着的列表，('2.htm', '序章 取代自我介绍的回忆—前天才美少女作家')
         :param temp_list: 获取上层请求传递的meta信息的小说目录，并将字典转列表
         :return:
         '''
-        full_text = self.gbk_utf8(response.text[35:]) # 去除全本小说开头没用的信息
+        import sys
+
+        # sys.setdefaultencoding('utf-8')
+        # print(response.encoding)
+        # print(response.body[:20])
+        # print(response.body.decode('gbk'))
+        # print(response.body.decode('utf-8'))
+        # print(response.text)
+        # full_text = response.body.decode('utf8')[35:] # 去除全本小说开头没用的信息
+        # full_text = response.body.decode('ascii')[35:] # 去除全本小说开头没用的信息
+
+        # gbk编码玄之又玄，蛋疼啊
+        try:
+            full_text = response.body.decode('gbk')[35:] # 去除全本小说开头没用的信息
+        except:
+            full_text = response.text[35:] # 去除全本小说开头没用的信息
 
         # 字典的键和值分离成两个列表
         keys_list = list(response.meta["item"]['小说目录'])
@@ -122,14 +137,13 @@ class Wenku8Spider(scrapy.Spider):
                         temp_re = "{title} {chapter}([\s\S]*?){end}".format(title=self.CheckRe(title), chapter=self.CheckRe(chapter[1]), end='◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆◇◆')  # 拼接正则表达式,"卷名 章节名([\s\S]*?)卷名/下一卷名 下一章节 "
                     else:
                         temp_re = "{title} {chapter}([\s\S]*?){next_title} {next_chapter}".format(title=self.CheckRe(title), chapter=self.CheckRe(chapter[1]), next_title=self.CheckRe(keys_list[keys_list.index(title)+1]), next_chapter=self.CheckRe(response.meta["item"]['小说目录'][keys_list[keys_list.index(title)+1]][0][1]))  # 拼接正则表达式,"卷名 章节名([\s\S]*?)卷名/下一卷名 下一章节 "
-                print(temp_re)
                 temp_dict = {
                     '正文': self.reglux(full_text, temp_re, False)[0],
                     '正则表达式': temp_re,
                     '卷名':title,
                     '章节名':chapter[1],
                     '所属小说':response.meta["item"]['书名'],
-                    '章节地址':'https://www.wenku8.net/novel{}/{}'.format(response.url[27:-4],chapter[0]),
+                    '章节地址':'https://www.wenku8.net/novel/{}/{}'.format(response.url[27:-4],chapter[0]),
                     '更新时间':datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                     '章节插画':[],
                 }
@@ -148,7 +162,7 @@ class Wenku8Spider(scrapy.Spider):
                 # 精简一下小说目录
                 tempindex[title].append(chapter[1])
 
-                # 主表插入
+                # 章节插入
                 item = wenku8ChapterItem()
                 item['name'] = temp_dict['所属小说']
                 item['title'] = temp_dict['卷名']
@@ -165,6 +179,7 @@ class Wenku8Spider(scrapy.Spider):
                 # with open('%s—%s.txt' % (title,chapter[1]), 'w', encoding='utf-8') as f:
                 #     f.write(self.reglux(full_text, temp_re, False)[0])
 
+        #小说基础信息
         item = wenku8Item()
         item['novelName'] = response.meta["item"]['书名']
         item['writer'] = response.meta["item"]['作者']
@@ -177,16 +192,6 @@ class Wenku8Spider(scrapy.Spider):
         item['action'] = response.meta["item"]['文章状态']
         item['isdelete'] = 0
         yield item
-
-    def gbk_utf8(self,temp):
-        '''
-        gbk转utf8
-        :param temp:字符串
-        :return: 字符串
-        '''
-        import unicodedata
-        print(unicode(temp, "gbk", "ignore"))
-        return temp.encode('gbk', 'ignore').decode('utf-8')
 
     def logFile(self,FileName,content,model = 'a+',encod = 'utf-8',Line_break = True):
         '''
@@ -239,8 +244,6 @@ class Wenku8Spider(scrapy.Spider):
 
     # 卷名识别以及章节从属（新）
     def titleCuter(self,index,ikey = 'vcss'):
-        # print(index)
-        # print(len(index))
         t = []
         c = []
         for i in index:
