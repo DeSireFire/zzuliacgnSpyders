@@ -7,8 +7,8 @@ from Scrapy_zzuliacgn.items import wenku8Item,wenku8ChapterItem
 class Wenku8Spider(scrapy.Spider):
     name = "wenku8"
     allowed_domains = ["wenku8.net","wkcdn.com","httporg.bin"]
-    # start_urls = ['https://www.wenku8.net/book/601.htm']
-    start_urls = ['https://www.wenku8.net/book/1.htm']
+    start_urls = ['https://www.wenku8.net/book/601.htm']
+    # start_urls = ['https://www.wenku8.net/book/1.htm']
 
     end_check_times = 0 # 发现“出现错误”的次数
     copyrightId = []
@@ -54,14 +54,15 @@ class Wenku8Spider(scrapy.Spider):
                 # '字数':self.reglux(response.text, self.novel_worksNum,False)[0],
                 '文章状态': self.reglux(response.text, self.novel_action, False)[0],
                 '小说目录': self.reglux(response.text, self.index_url, False)[0],
-                '小说全本地址': 'http://dl.wkcdn.com/txtgbk{num}.txt'.format(num=self.reglux(response.text, self.index_url, False)[0][28:-10]),
-                # '小说全本地址': 'http://dl.wkcdn.com/txtutf8{num}.txt'.format(num=self.reglux(response.text, self.index_url, False)[0][28:-10]),
+                # '小说全本地址': 'http://dl.wkcdn.com/txtgbk{num}.txt'.format(num=self.reglux(response.text, self.index_url, False)[0][28:-10]),
+                '小说全本地址': 'http://dl.wkcdn.com/txtutf8{num}.txt'.format(num=self.reglux(response.text, self.index_url, False)[0][28:-10]),
             }
+
             print('http://dl.wkcdn.com/txtgbk{num}.txt'.format(num=self.reglux(response.text, self.index_url, False)[0][28:-10]))
             yield scrapy.Request(url=main_dict["小说目录"], callback=self.index_info, meta={"item": main_dict})
 
             self.end_check_times = 0  # 计数初始化
-            yield scrapy.Request(nextUrl, callback=self.parse)  # 跳转下一页
+            # yield scrapy.Request(nextUrl, callback=self.parse)  # 跳转下一页
         else: # 出现错误
             self.end_check_times += 1  # 增加一次失败次数
             print('页面出现错误！')
@@ -102,22 +103,11 @@ class Wenku8Spider(scrapy.Spider):
         :param temp_list: 获取上层请求传递的meta信息的小说目录，并将字典转列表
         :return:
         '''
-        import sys
-
-        # sys.setdefaultencoding('utf-8')
-        # print(response.encoding)
-        # print(response.body[:20])
-        # print(response.body.decode('gbk'))
-        # print(response.body.decode('utf-8'))
-        # print(response.text)
-        # full_text = response.body.decode('utf8')[35:] # 去除全本小说开头没用的信息
-        # full_text = response.body.decode('ascii')[35:] # 去除全本小说开头没用的信息
-
-        # gbk编码玄之又玄，蛋疼啊
-        try:
-            full_text = response.body.decode('gbk')[35:] # 去除全本小说开头没用的信息
-        except:
+        # full_text = response.body.decode(chardet.detect(response.body)['encoding']).encode('utf-8')
+        if 'utf8' in response.url:
             full_text = response.text[35:] # 去除全本小说开头没用的信息
+        else:
+            full_text = response.body.decode('gbk')[35:] # 去除全本小说开头没用的信息
 
         # 字典的键和值分离成两个列表
         keys_list = list(response.meta["item"]['小说目录'])
@@ -147,6 +137,11 @@ class Wenku8Spider(scrapy.Spider):
                     '更新时间':datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                     '章节插画':[],
                 }
+
+                # 检查是否爬取成功
+                if '暂无具体信息...' == temp_dict['正文']:
+                    print('正则获取失败！尝试转换gbk全本！')
+                    yield scrapy.Request(url='http://dl.wkcdn.com/txtgbk/%s'%response.url[28:], callback=self.full_text, meta={"item": response.meta['item']})
 
                 # 字数统计
                 temp_dict['章节字数'] = len(''.join(temp_dict['正文']))
