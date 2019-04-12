@@ -7,7 +7,7 @@ from Scrapy_zzuliacgn.items import wenku8Item,wenku8ChapterItem
 class Wenku8Spider(scrapy.Spider):
     name = "wenku8"
     allowed_domains = ["wenku8.net","wkcdn.com","httporg.bin"]
-    start_urls = ['https://www.wenku8.net/book/1000.htm']
+    start_urls = ['https://www.wenku8.net/book/166.htm']
     # start_urls = ['https://www.wenku8.net/book/1.htm']
 
     end_check_times = 0 # 发现“出现错误”的次数
@@ -35,47 +35,44 @@ class Wenku8Spider(scrapy.Spider):
         # 下一页
         _next = "{num}.htm".format(num=str(int(response.url[28:-4]) + 1))
         nextUrl = response.urljoin(_next)
-        if int(response.url[28:-4]) + 1 > 2544:
-            print(response.text)
-            yield scrapy.Request(nextUrl, callback=self.parse)  # 跳转回爬取函数继续
-        else:
-            if response.status == 400:
-                print(response.text)
-            if "出现错误" not in response.text:  # 不出现“出现错误”同时错误尝试次数小于5
-                # print(response.text)
-                if '版权' in response.text:
-                    self.copyrightId.append(response.url)
-                main_dict = {
-                    '书名': self.reglux(response.text, self.novel_name, False)[0],
-                    '作者': self.reglux(response.text, self.novel_writer, False)[0],
-                    '插画师': '暂时未知',
-                    '文库名': self.reglux(response.text, self.novel_fromPress, False)[0],
-                    '简介': self.reglux(response.text, self.novel_intro, False)[0],
-                    '封面': self.reglux(response.text, self.novel_headerImage, False)[0],
-                    '全书字数': 0,
-                    '类型': 14,  # 轻小说 id 14
-                    # '字数':self.reglux(response.text, self.novel_worksNum,False)[0],
-                    '文章状态': self.reglux(response.text, self.novel_action, False)[0],
-                    '小说目录': self.reglux(response.text, self.index_url, False)[0],
-                    '小说全本地址': 'http://dl.wkcdn.com/txtutf8{num}.txt'.format(
-                        num=self.reglux(response.text, self.index_url, False)[0][28:-10]),
-                }
-                # yield scrapy.Request(url=main_dict["小说目录"], callback=self.index_info, meta={"item": main_dict})
+        if response.status == 400:
+            print(response.cookie)
+            print(response.headers)
+        if "该文章不存在" not in response.text and 'Bad Request' not in response.text:  # 不出现“出现错误”同时错误尝试次数小于5
+            # print(response.text)
+            if '版权' in response.text:
+                self.copyrightId.append(response.url)
+            main_dict = {
+                '书名': self.reglux(response.text, self.novel_name, False)[0],
+                '作者': self.reglux(response.text, self.novel_writer, False)[0],
+                '插画师': '暂时未知',
+                '文库名': self.reglux(response.text, self.novel_fromPress, False)[0],
+                '简介': self.reglux(response.text, self.novel_intro, False)[0],
+                '封面': self.reglux(response.text, self.novel_headerImage, False)[0],
+                '全书字数': 0,
+                '类型': 14,  # 轻小说 id 14
+                # '字数':self.reglux(response.text, self.novel_worksNum,False)[0],
+                '文章状态': self.reglux(response.text, self.novel_action, False)[0],
+                '小说目录': self.reglux(response.text, self.index_url, False)[0],
+                '小说全本地址': 'http://dl.wkcdn.com/txtutf8{num}.txt'.format(
+                    num=self.reglux(response.text, self.index_url, False)[0][28:-10]),
+            }
+            yield scrapy.Request(url=main_dict["小说目录"], callback=self.index_info, meta={"item": main_dict})
 
-                self.end_check_times = 0  # 计数初始化
-                yield scrapy.Request(nextUrl, callback=self.parse)  # 跳转回爬取函数继续
-            else: # 出现错误
-                self.end_check_times += 1  # 增加一次失败次数
-                print('页面出现错误！')
-                # 将被删除的id记录下来
-                if self.end_check_times <= 1:
-                    self.errorId.append(response.url)
-                if self.end_check_times <= 5:
-                    yield scrapy.Request(nextUrl, callback=self.parse)  # 检查下一页
-                else:
-                    self.logFile(os.path.join('wenku8', 'wenku8Iderror.txt'), self.errorId, 'w+', 'utf-8', True)
-                    self.logFile(os.path.join('wenku8', 'wenku8Copyright.txt'), self.copyrightId, 'w+', 'utf-8', True)
-                    print('出现错误的次数超过5次，爬虫停止！')
+            self.end_check_times = 0  # 计数初始化
+            # yield scrapy.Request(nextUrl, callback=self.parse)  # 跳转回爬取函数继续
+        else: # 出现错误
+            self.end_check_times += 1  # 增加一次失败次数
+            print('页面出现错误！')
+            # 将被删除的id记录下来
+            if self.end_check_times <= 1:
+                self.errorId.append(response.url)
+            if self.end_check_times <= 5:
+                yield scrapy.Request(nextUrl, callback=self.parse)  # 检查下一页
+            else:
+                self.logFile(os.path.join('wenku8', 'wenku8Iderror.txt'), list(set(self.errorId[:-1])), 'w+', 'utf-8', True)
+                self.logFile(os.path.join('wenku8', 'wenku8Copyright.txt'), list(set(self.copyrightId)), 'w+', 'utf-8', True)
+                print('出现错误的次数超过5次，爬虫停止！')
 
 
     def index_info(self, response):
@@ -87,10 +84,10 @@ class Wenku8Spider(scrapy.Spider):
         Chapter = self.reglux(response.text, '<tr>([\s\S]*?)</tr>',False)
         main_dict = response.meta["item"]
         main_dict['小说目录'] = self.titleCheck(Chapter)
-        # for i in response.meta["item"]['小说目录']:
-        #     print('%s:%s'%(i,response.meta["item"]['小说目录'][i]))
+        for i in response.meta["item"]['小说目录']:
+            print('%s:%s'%(i,response.meta["item"]['小说目录'][i]))
 
-        yield scrapy.Request(url=main_dict["小说全本地址"], callback=self.full_text,meta={"item": main_dict})
+        # yield scrapy.Request(url=main_dict["小说全本地址"], callback=self.full_text,meta={"item": main_dict})
 
 
 
@@ -138,6 +135,8 @@ class Wenku8Spider(scrapy.Spider):
                 # 字数统计
                 temp_dict['章节字数'] = len(''.join(temp_dict['正文']))
                 response.meta["item"]['全书字数'] += temp_dict['章节字数']
+                if temp_dict['章节字数'] == 0:
+                    print(temp_dict)
 
                 # 放弃直接使用wenku8图片
                 if temp_dict['正文'] == '\r\n\r\n\r\n\r\n':
@@ -202,7 +201,7 @@ class Wenku8Spider(scrapy.Spider):
         :param tempStr:
         :return:
         '''
-        temp = '\?$%^&.[]~{}()|'
+        temp = '\?$%^&.[]~{}()|<>'
         for i in temp:
             tempStr = tempStr.replace(i,'\%s'%i)
         return tempStr
