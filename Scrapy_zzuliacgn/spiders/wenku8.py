@@ -7,8 +7,8 @@ from Scrapy_zzuliacgn.items import wenku8Item,wenku8ChapterItem
 class Wenku8Spider(scrapy.Spider):
     name = "wenku8"
     allowed_domains = ["wenku8.net","wkcdn.com","httporg.bin"]
-    start_urls = ['https://www.wenku8.net/book/166.htm']
-    # start_urls = ['https://www.wenku8.net/book/1.htm']
+    # start_urls = ['https://www.wenku8.net/book/601.htm']
+    start_urls = ['https://www.wenku8.net/book/1.htm']
 
     end_check_times = 0 # 发现“出现错误”的次数
     copyrightId = []
@@ -70,7 +70,7 @@ class Wenku8Spider(scrapy.Spider):
             if self.end_check_times <= 5:
                 yield scrapy.Request(nextUrl, callback=self.parse)  # 检查下一页
             else:
-                self.logFile(os.path.join('wenku8', 'wenku8Iderror.txt'), list(set(self.errorId[:-1])), 'w+', 'utf-8', True)
+                self.logFile(os.path.join('wenku8', 'wenku8Iderror.txt'), sorted(set(self.errorId[:-1]),key=self.errorId[:-1].index), 'w+', 'utf-8', True)
                 self.logFile(os.path.join('wenku8', 'wenku8Copyright.txt'), list(set(self.copyrightId)), 'w+', 'utf-8', True)
                 print('出现错误的次数超过5次，爬虫停止！')
 
@@ -87,7 +87,7 @@ class Wenku8Spider(scrapy.Spider):
         for i in response.meta["item"]['小说目录']:
             print('%s:%s'%(i,response.meta["item"]['小说目录'][i]))
 
-        # yield scrapy.Request(url=main_dict["小说全本地址"], callback=self.full_text,meta={"item": main_dict})
+        yield scrapy.Request(url=main_dict["小说全本地址"], callback=self.full_text,meta={"item": main_dict})
 
 
 
@@ -135,11 +135,11 @@ class Wenku8Spider(scrapy.Spider):
                 # 字数统计
                 temp_dict['章节字数'] = len(''.join(temp_dict['正文']))
                 response.meta["item"]['全书字数'] += temp_dict['章节字数']
-                if temp_dict['章节字数'] == 0:
+                if temp_dict['章节字数'] < 10:
                     print(temp_dict)
 
                 # 放弃直接使用wenku8图片
-                if temp_dict['正文'] == '\r\n\r\n\r\n\r\n':
+                if temp_dict['正文'] in '\r\n\r\n\r\n\r\n' and len(temp_dict['正文']) <= 8:
                     temp_dict['章节名'] = '本册插画'
                     temp_dict['正文'] = '本册插画'
 
@@ -152,7 +152,7 @@ class Wenku8Spider(scrapy.Spider):
                 item['title'] = temp_dict['卷名']
                 item['chapter'] = temp_dict['章节名']
                 item['fullName'] = '{name}_{title}_{chapter}'.format(name=temp_dict['所属小说'], title=temp_dict['卷名'],chapter=temp_dict['章节名'])
-                item['worksNum'] = str(temp_dict['章节字数'])
+                item['worksNum'] = temp_dict['章节字数']
                 item['updateTime'] = temp_dict['更新时间']
                 item['chapterImgurls'] = str(temp_dict['章节插画'])
                 item['container'] = temp_dict['正文']
@@ -170,7 +170,7 @@ class Wenku8Spider(scrapy.Spider):
         item['fromPress'] = response.meta["item"]['文库名']
         item['intro'] = response.meta["item"]['简介']
         item['headerImage'] = response.meta["item"]['封面']
-        item['resWorksNum'] = str(response.meta["item"]['全书字数'])
+        item['resWorksNum'] = response.meta["item"]['全书字数']
         item['types_id'] = response.meta["item"]['类型']
         item['action'] = response.meta["item"]['文章状态']
         item['isdelete'] = 0
@@ -240,17 +240,21 @@ class Wenku8Spider(scrapy.Spider):
                 tids.append(tlist.index(i))
         count = 0
         recdict = {}
-        while count + 1 < len(tids):  # 使用卷名下标来对列表中属于章节的部分切片出来
-            temp = tlist[tids[count]:tids[count + 1]]
-            if count + 1 == len(tids) - 1:
-                temp = tlist[tids[count + 1]:]
-                '''
-                temp[0]必包含卷名，其后temp[1:]均为其所属章节名
-                temp[0] 取出带有卷名未清洗的html，例如：<td class="vcss" colspan="4">短篇</td>；
-                self.reglux(temp[0],self.Chapter_title,False 通过正则得到列表，下标0的位置为清洗出的卷名,例如：短篇；
-                self.reglux(''.join(temp[1:]),self.Chapter_name,False) 通过正则清洗，得到章节地址和章节名；
-                recdict为字典，recdict[key]=value,给键赋值；
-                '''
-            recdict[ self.reglux(temp[0],self.Chapter_title,False)[0] ] = self.reglux(''.join(temp[1:]),self.Chapter_name,False)
-            count += 1
+        if len(tids) == 1:
+            print('该小说未发现分多卷')
+            recdict[self.reglux(tlist[0], self.Chapter_title, False)[0]] = self.reglux(''.join(tlist[1:]),self.Chapter_name, False)
+        else:
+            while count + 1 < len(tids):  # 使用卷名下标来对列表中属于章节的部分切片出来
+                temp = tlist[tids[count]:tids[count + 1]]
+                if count + 1 == len(tids) - 1:
+                    temp = tlist[tids[count + 1]:]
+                    '''
+                    temp[0]必包含卷名，其后temp[1:]均为其所属章节名
+                    temp[0] 取出带有卷名未清洗的html，例如：<td class="vcss" colspan="4">短篇</td>；
+                    self.reglux(temp[0],self.Chapter_title,False 通过正则得到列表，下标0的位置为清洗出的卷名,例如：短篇；
+                    self.reglux(''.join(temp[1:]),self.Chapter_name,False) 通过正则清洗，得到章节地址和章节名；
+                    recdict为字典，recdict[key]=value,给键赋值；
+                    '''
+                recdict[ self.reglux(temp[0],self.Chapter_title,False)[0] ] = self.reglux(''.join(temp[1:]),self.Chapter_name,False)
+                count += 1
         return recdict

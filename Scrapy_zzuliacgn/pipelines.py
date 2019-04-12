@@ -69,7 +69,8 @@ class mysqlPipeline(object):
         mykeys = ",".join(data.keys())
         myvalues = ",".join(['%s'] * len(data))
         myUpdate = ",".join([" {key} = %s".format(key=key) for key in data])+ ";"
-        sql = "alter table {table} AUTO_INCREMENT=1;INSERT INTO {table}({keys}) VALUES ({values}) ON DUPLICATE KEY UPDATE".format(table=tableName,keys=mykeys,values=myvalues)
+        sql = "INSERT INTO {table}({keys}) VALUES ({values}) ON DUPLICATE KEY UPDATE".format(table=tableName,keys=mykeys,values=myvalues)
+        # sql = "alter table {table} AUTO_INCREMENT=1;INSERT INTO {table}({keys}) VALUES ({values}) ON DUPLICATE KEY UPDATE".format(table=tableName,keys=mykeys,values=myvalues)
         sql += myUpdate
         try:
             if self.cursor.execute(sql, tuple(data.values()) * 2):
