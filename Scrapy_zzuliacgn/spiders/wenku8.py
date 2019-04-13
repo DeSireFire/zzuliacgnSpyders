@@ -7,8 +7,8 @@ from Scrapy_zzuliacgn.items import wenku8Item,wenku8ChapterItem
 class Wenku8Spider(scrapy.Spider):
     name = "wenku8"
     allowed_domains = ["wenku8.net","wkcdn.com","httporg.bin"]
-    start_urls = ['https://www.wenku8.net/book/601.htm']
-    # start_urls = ['https://www.wenku8.net/book/1.htm']
+    # start_urls = ['https://www.wenku8.net/book/601.htm']
+    start_urls = ['https://www.wenku8.net/book/1.htm']
 
     end_check_times = 0 # 发现“出现错误”的次数
     copyrightId = []
@@ -54,15 +54,15 @@ class Wenku8Spider(scrapy.Spider):
                 # '字数':self.reglux(response.text, self.novel_worksNum,False)[0],
                 '文章状态': self.reglux(response.text, self.novel_action, False)[0],
                 '小说目录': self.reglux(response.text, self.index_url, False)[0],
-                # '小说全本地址': 'http://dl.wkcdn.com/txtgbk{num}.txt'.format(num=self.reglux(response.text, self.index_url, False)[0][28:-10]),
                 '小说全本地址': 'http://dl.wkcdn.com/txtutf8{num}.txt'.format(num=self.reglux(response.text, self.index_url, False)[0][28:-10]),
             }
 
-            print('http://dl.wkcdn.com/txtgbk{num}.txt'.format(num=self.reglux(response.text, self.index_url, False)[0][28:-10]))
+            # print('http://dl.wkcdn.com/txtgbk{num}.txt'.format(num=self.reglux(response.text, self.index_url, False)[0][28:-10]))
+            print(main_dict["小说全本地址"])
             yield scrapy.Request(url=main_dict["小说目录"], callback=self.index_info, meta={"item": main_dict})
 
             self.end_check_times = 0  # 计数初始化
-            # yield scrapy.Request(nextUrl, callback=self.parse)  # 跳转下一页
+            yield scrapy.Request(nextUrl, callback=self.parse)  # 跳转下一页
         else: # 出现错误
             self.end_check_times += 1  # 增加一次失败次数
             print('页面出现错误！')
@@ -87,7 +87,8 @@ class Wenku8Spider(scrapy.Spider):
         main_dict = response.meta["item"]
         # print(self.titleCuter(Chapter))
         # print(self.titleCheck(Chapter))
-        main_dict['小说目录'] = self.titleCuter(Chapter)
+        main_dict['小说目录'] = self.titleCheck(Chapter)
+        # main_dict['小说目录'] = self.titleCuter(Chapter)
         # for i in response.meta["item"]['小说目录']:
         #     print('%s:%s'%(i,response.meta["item"]['小说目录'][i]))
         #
@@ -105,8 +106,10 @@ class Wenku8Spider(scrapy.Spider):
         '''
         # full_text = response.body.decode(chardet.detect(response.body)['encoding']).encode('utf-8')
         if 'utf8' in response.url:
+            print('utf8链接')
             full_text = response.text[35:] # 去除全本小说开头没用的信息
         else:
+            print('gbk链接')
             full_text = response.body.decode('gbk')[35:] # 去除全本小说开头没用的信息
 
         # 字典的键和值分离成两个列表
