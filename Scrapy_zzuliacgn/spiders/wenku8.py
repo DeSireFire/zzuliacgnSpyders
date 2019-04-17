@@ -40,8 +40,6 @@ class Wenku8Spider(scrapy.Spider):
             print(response.headers)
         if "该文章不存在" not in response.text and 'Bad Request' not in response.text:  # 不出现“出现错误”同时错误尝试次数小于5
             # print(response.text)
-            if '版权' in response.text:
-                self.copyrightId.append(response.url)
             main_dict = {
                 '书名': self.reglux(response.text, self.novel_name, False)[0],
                 '作者': self.reglux(response.text, self.novel_writer, False)[0],
@@ -56,10 +54,14 @@ class Wenku8Spider(scrapy.Spider):
                 '小说目录': self.reglux(response.text, self.index_url, False)[0],
                 '小说全本地址': 'http://dl.wkcdn.com/txtutf8{num}.txt'.format(num=self.reglux(response.text, self.index_url, False)[0][28:-10]),
             }
-
+            # 版权问题小说采用全文切割法采集，否则使用html采集
+            if '版权问题' in response.text:
+                self.copyrightId.append(response.url)
+                yield scrapy.Request(url=main_dict["小说目录"], callback=self.index_info, meta={"item": main_dict,'采集方式':['full_text','html_text','chapter_text'][0]})
+            else:
+                yield scrapy.Request(url=main_dict["小说目录"], callback=self.index_info, meta={"item": main_dict,'采集方式':['full_text','html_text','chapter_text'][1]})
             # print('http://dl.wkcdn.com/txtgbk{num}.txt'.format(num=self.reglux(response.text, self.index_url, False)[0][28:-10]))
-            print(main_dict["小说全本地址"])
-            yield scrapy.Request(url=main_dict["小说目录"], callback=self.index_info, meta={"item": main_dict})
+            # yield scrapy.Request(url=main_dict["小说目录"], callback=self.index_info, meta={"item": main_dict})
 
             self.end_check_times = 0  # 计数初始化
             yield scrapy.Request(nextUrl, callback=self.parse)  # 跳转下一页
@@ -91,8 +93,10 @@ class Wenku8Spider(scrapy.Spider):
         # main_dict['小说目录'] = self.titleCuter(Chapter)
         # for i in response.meta["item"]['小说目录']:
         #     print('%s:%s'%(i,response.meta["item"]['小说目录'][i]))
-        #
-        yield scrapy.Request(url=main_dict["小说全本地址"], callback=self.full_text,meta={"item": main_dict})
+        if response.meta["采集方式"] == 'full_text':
+            yield scrapy.Request(url=main_dict["小说全本地址"], callback=self.full_text,meta={"item": main_dict})
+        else:
+            yield scrapy.Request(url=main_dict["小说全本地址"], callback=self.full_text,meta={"item": main_dict})
 
 
 
