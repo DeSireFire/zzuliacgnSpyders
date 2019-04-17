@@ -27,6 +27,7 @@ class Wenku8Spider(scrapy.Spider):
     Chapter_title=r'<td class="vcss" colspan="4">(.*?)</td>' # 小说卷名
     Chapter_name=r'<td class="ccss"><a href="([\s\S]*?)">([\s\S]*?)</a></td>' # 小说章节名
     Chapter_img=r'<img src="([\s\S]*?)" border="0" class="imagecontent">' # 小说插图
+    html_container = '&nbsp;&nbsp;&nbsp;&nbsp;([\s\S]*?)<br />'
 
     # 该爬虫所用的settings信息
     custom_settings = wenku8
@@ -109,7 +110,7 @@ class Wenku8Spider(scrapy.Spider):
         :param response:
         :return:
         '''
-        print([response.text])
+        print(self.reglux(response.text, self.html_container, False))
 
     def full_text(self,response):
         '''
