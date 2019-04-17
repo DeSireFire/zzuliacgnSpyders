@@ -7,8 +7,8 @@ from Scrapy_zzuliacgn.items import wenku8Item,wenku8ChapterItem
 class Wenku8Spider(scrapy.Spider):
     name = "wenku8"
     allowed_domains = ["wenku8.net","wkcdn.com","httporg.bin"]
-    # start_urls = ['https://www.wenku8.net/book/601.htm']
-    start_urls = ['https://www.wenku8.net/book/1.htm']
+    start_urls = ['https://www.wenku8.net/book/601.htm']
+    # start_urls = ['https://www.wenku8.net/book/1.htm']
 
     end_check_times = 0 # 发现“出现错误”的次数
     copyrightId = []
@@ -64,7 +64,7 @@ class Wenku8Spider(scrapy.Spider):
             # yield scrapy.Request(url=main_dict["小说目录"], callback=self.index_info, meta={"item": main_dict})
 
             self.end_check_times = 0  # 计数初始化
-            yield scrapy.Request(nextUrl, callback=self.parse)  # 跳转下一页
+            # yield scrapy.Request(nextUrl, callback=self.parse)  # 跳转下一页
         else: # 出现错误
             self.end_check_times += 1  # 增加一次失败次数
             print('页面出现错误！')
@@ -90,13 +90,18 @@ class Wenku8Spider(scrapy.Spider):
         # print(self.titleCuter(Chapter))
         # print(self.titleCheck(Chapter))
         main_dict['小说目录'] = self.titleCheck(Chapter)
-        # main_dict['小说目录'] = self.titleCuter(Chapter)
+        # main_dict['小说目录'] = self.titleCuter(Chapter)n
         # for i in response.meta["item"]['小说目录']:
         #     print('%s:%s'%(i,response.meta["item"]['小说目录'][i]))
         if response.meta["采集方式"] == 'full_text':
             yield scrapy.Request(url=main_dict["小说全本地址"], callback=self.full_text,meta={"item": main_dict})
         else:
-            yield scrapy.Request(url=main_dict["小说全本地址"], callback=self.full_text,meta={"item": main_dict})
+            # print(main_dict["小说目录"])
+            for m in main_dict["小说目录"]:
+                for n in main_dict["小说目录"][m]:
+                    print(n)
+                    print(response.urljoin(n[0]))
+                    yield scrapy.Request(url=response.urljoin(n[0]), callback=self.html_text,meta={"item": main_dict})
 
     def html_text(self,response):
         '''
@@ -104,7 +109,7 @@ class Wenku8Spider(scrapy.Spider):
         :param response:
         :return:
         '''
-        pass
+        print([response.text])
 
     def full_text(self,response):
         '''
