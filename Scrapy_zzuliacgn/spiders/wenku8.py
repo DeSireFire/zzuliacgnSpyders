@@ -98,7 +98,13 @@ class Wenku8Spider(scrapy.Spider):
         else:
             yield scrapy.Request(url=main_dict["小说全本地址"], callback=self.full_text,meta={"item": main_dict})
 
-
+    def html_text(self,response):
+        '''
+        通过html页面采集小说
+        :param response:
+        :return:
+        '''
+        pass
 
     def full_text(self,response):
         '''
