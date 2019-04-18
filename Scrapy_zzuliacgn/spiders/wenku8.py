@@ -7,7 +7,8 @@ from Scrapy_zzuliacgn.items import wenku8Item,wenku8ChapterItem
 class Wenku8Spider(scrapy.Spider):
     name = "wenku8"
     allowed_domains = ["wenku8.net","wkcdn.com","httporg.bin"]
-    start_urls = ['https://www.wenku8.net/book/601.htm']
+    start_urls = ['https://www.wenku8.net/book/5.htm']
+    # start_urls = ['https://www.wenku8.net/book/601.htm']
     # start_urls = ['https://www.wenku8.net/book/1.htm']
 
     end_check_times = 0 # 发现“出现错误”的次数
@@ -19,6 +20,7 @@ class Wenku8Spider(scrapy.Spider):
     novel_writer='<td width="20%">小说作者：([\s\S]*?)</td>'  # 作者名
     novel_intro='<span class="hottext">内容简介：</span><br /><span style="font-size:14px;">([\s\S]*?)</span>'  # 小说简介
     novel_headerImage=r'td width="20%" align="center" valign="top">\r\n          <img src="([\s\S]*?)"'  # 小说封面URL
+    novel_chaImage=r'<img src="([\s\S]*?)" border="0" class="imagecontent">'  # 小说插画URL
     novel_worksNum='<td width="20%">全文长度：([\s\S]*?)字</td>'  # 小说字数
     novel_saveTime:'' # 小说收录时间
     novel_updateTime:'' # 小说更新时间
@@ -27,7 +29,10 @@ class Wenku8Spider(scrapy.Spider):
     Chapter_title=r'<td class="vcss" colspan="4">(.*?)</td>' # 小说卷名
     Chapter_name=r'<td class="ccss"><a href="([\s\S]*?)">([\s\S]*?)</a></td>' # 小说章节名
     Chapter_img=r'<img src="([\s\S]*?)" border="0" class="imagecontent">' # 小说插图
-    html_container = '&nbsp;&nbsp;&nbsp;&nbsp;([\s\S]*?)<br />'
+    # html_container = '<div id="content" style="font-size: 16px; color: rgb(0, 0, 0);">([\s\S]*?)</div>'
+    # html_container = '<br />\r\n&nbsp;&nbsp;&nbsp;&nbsp;([\s\S]*?)[\r\n]'
+    html_container = '\(http://www.wenku8.com\)</ul>([\s\S]*?)<ul id="contentdp">最新最全的日本动漫轻小说 轻小说文库'
+    # html_container = '<br />\r\n&nbsp;&nbsp;&nbsp;&nbsp;([\s\S]*?)"'
 
     # 该爬虫所用的settings信息
     custom_settings = wenku8
@@ -90,13 +95,13 @@ class Wenku8Spider(scrapy.Spider):
         main_dict = response.meta["item"]
         # print(self.titleCuter(Chapter))
         # print(self.titleCheck(Chapter))
-        main_dict['小说目录'] = self.titleCheck(Chapter)
-        # main_dict['小说目录'] = self.titleCuter(Chapter)n
         # for i in response.meta["item"]['小说目录']:
         #     print('%s:%s'%(i,response.meta["item"]['小说目录'][i]))
         if response.meta["采集方式"] == 'full_text':
+            main_dict['小说目录'] = self.titleCheck(Chapter)
             yield scrapy.Request(url=main_dict["小说全本地址"], callback=self.full_text,meta={"item": main_dict})
         else:
+            main_dict['小说目录'] = self.titleCuter(Chapter)
             # print(main_dict["小说目录"])
             for m in main_dict["小说目录"]:
                 for n in main_dict["小说目录"][m]:
@@ -110,7 +115,17 @@ class Wenku8Spider(scrapy.Spider):
         :param response:
         :return:
         '''
-        print(self.reglux(response.text, self.html_container, False))
+        # print([response.text])
+        for i in self.reglux(response.text, self.html_container, False)[0].replace('<br />','').split('&nbsp;&nbsp;&nbsp;&nbsp;'):
+        #     print(i)
+        # 输出成文本
+            with open('2333.txt', 'a+', encoding='utf-8') as f:
+                f.write(i.replace('\r\n\r\n','\r\n'))
+        # print(self.reglux(response.text, self.html_container, False)[0].replace('<br />','').split('&nbsp;&nbsp;&nbsp;&nbsp;'))
+        print(len(self.reglux(response.text, self.html_container, False)[0].replace('<br />','').split('&nbsp;&nbsp;&nbsp;&nbsp;')))
+        # 判断为图片章节
+        if len(self.reglux(response.text, self.html_container, False)[0].replace('<br />','').split('&nbsp;&nbsp;&nbsp;&nbsp;')) == 1:
+            print(self.reglux(response.text, self.novel_chaImage, False))
 
     def full_text(self,response):
         '''
@@ -265,7 +280,10 @@ class Wenku8Spider(scrapy.Spider):
                 t.append(self.reglux(i,self.Chapter_title,False)[0])
             else:
                 c.append(self.reglux(i,self.Chapter_name,False))
+        print(t)
+        print(c)
         resdict = dict(zip(t,c))
+        print(resdict)
         return resdict
 
     # 卷名识别以及章节从属
