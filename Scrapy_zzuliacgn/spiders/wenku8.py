@@ -101,13 +101,14 @@ class Wenku8Spider(scrapy.Spider):
             main_dict['小说目录'] = self.titleCheck(Chapter)
             yield scrapy.Request(url=main_dict["小说全本地址"], callback=self.full_text,meta={"item": main_dict})
         else:
+            # todo 卷名和章节分类方法存在问题，id 5
             main_dict['小说目录'] = self.titleCuter(Chapter)
             # print(main_dict["小说目录"])
             for m in main_dict["小说目录"]:
                 for n in main_dict["小说目录"][m]:
                     print(n)
                     print(response.urljoin(n[0]))
-                    yield scrapy.Request(url=response.urljoin(n[0]), callback=self.html_text,meta={"item": main_dict})
+                    yield scrapy.Request(url=response.urljoin(n[0]), callback=self.html_text,meta={"item": main_dict,'title':m,'chapter':n,})
 
     def html_text(self,response):
         '''
@@ -116,16 +117,40 @@ class Wenku8Spider(scrapy.Spider):
         :return:
         '''
         # print([response.text])
-        for i in self.reglux(response.text, self.html_container, False)[0].replace('<br />','').split('&nbsp;&nbsp;&nbsp;&nbsp;'):
+        print(response.meta["item"])
+
+        # for i in self.reglux(response.text, self.html_container, False)[0].replace('<br />','').split('&nbsp;&nbsp;&nbsp;&nbsp;'):
         #     print(i)
         # 输出成文本
-            with open('2333.txt', 'a+', encoding='utf-8') as f:
-                f.write(i.replace('\r\n\r\n','\r\n'))
+        #     with open('2333.txt', 'a+', encoding='utf-8') as f:
+        #         f.write(i.replace('\r\n\r\n','\r\n'))
+        #     temp_dict = {
+        #         '正文': self.reglux(full_text, temp_re, False)[0],
+        #         '正则表达式': temp_re,
+        #         '卷名': title,
+        #         '章节名': chapter[1],
+        #         '所属小说': response.meta["item"]['书名'],
+        #         '章节地址': 'https://www.wenku8.net/novel/{}/{}'.format(response.url[27:-4], chapter[0]),
+        #         '更新时间': datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        #         '章节插画': [],
+        #     }
         # print(self.reglux(response.text, self.html_container, False)[0].replace('<br />','').split('&nbsp;&nbsp;&nbsp;&nbsp;'))
-        print(len(self.reglux(response.text, self.html_container, False)[0].replace('<br />','').split('&nbsp;&nbsp;&nbsp;&nbsp;')))
+        # 章节插入
+        item = wenku8ChapterItem()
+        item['name'] = response.meta['item']['书名']
+        item['title'] = response.meta['title']
+        item['chapter'] = response.meta['chapter']
+        item['fullName'] = '{name}_{title}_{chapter}'.format(name=response.meta['item']['书名'], title=response.meta['title'],chapter=response.meta['chapter'])
+        item['worksNum'] = len(self.reglux(response.text, self.html_container, False)[0].replace('<br />','').replace('&nbsp;&nbsp;&nbsp;&nbsp;','').replace('\r\n\r\n','\r\n'))
+        item['updateTime'] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        item['chapterImgurls'] = str([])
+        item['container'] = self.reglux(response.text, self.html_container, False)[0].replace('<br />','').replace('&nbsp;&nbsp;&nbsp;&nbsp;','').replace('\r\n\r\n','\r\n')
+        item['isdelete'] = 0
+        yield item
         # 判断为图片章节
         if len(self.reglux(response.text, self.html_container, False)[0].replace('<br />','').split('&nbsp;&nbsp;&nbsp;&nbsp;')) == 1:
-            print(self.reglux(response.text, self.novel_chaImage, False))
+            item['chapterImgurls'] = str(self.reglux(response.text, self.novel_chaImage, False))
+
 
     def full_text(self,response):
         '''
