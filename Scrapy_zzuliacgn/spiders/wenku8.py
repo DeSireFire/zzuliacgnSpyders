@@ -11,10 +11,13 @@ class Wenku8Spider(scrapy.Spider):
     # start_urls = ['https://www.wenku8.net/book/601.htm']
     # start_urls = ['https://www.wenku8.net/book/1.htm']
 
+    # 控制变量
     end_check_times = 0 # 发现“出现错误”的次数
-    copyrightId = []
-    errorId = []
+    copyrightId = [] # 发现“版权问题”的次数
+    errorId = [] # 发现“文章不存在的次数”的次数
+    res_worksNum = 0 # 小说总字数
 
+    # 正则变量
     novel_name='e:16px; font-weight: bold; line-height: 150%"><b>([\s\S]*?)</b>'  # 小说名
     novel_fromPress='<td width="20%">文库分类：([\s\S]*?)</td>'  # 文库分类
     novel_writer='<td width="20%">小说作者：([\s\S]*?)</td>'  # 作者名
@@ -29,10 +32,7 @@ class Wenku8Spider(scrapy.Spider):
     Chapter_title=r'<td class="vcss" colspan="4">(.*?)</td>' # 小说卷名
     Chapter_name=r'<td class="ccss"><a href="([\s\S]*?)">([\s\S]*?)</a></td>' # 小说章节名
     Chapter_img=r'<img src="([\s\S]*?)" border="0" class="imagecontent">' # 小说插图
-    # html_container = '<div id="content" style="font-size: 16px; color: rgb(0, 0, 0);">([\s\S]*?)</div>'
-    # html_container = '<br />\r\n&nbsp;&nbsp;&nbsp;&nbsp;([\s\S]*?)[\r\n]'
     html_container = '\(http://www.wenku8.com\)</ul>([\s\S]*?)<ul id="contentdp">最新最全的日本动漫轻小说 轻小说文库'
-    # html_container = '<br />\r\n&nbsp;&nbsp;&nbsp;&nbsp;([\s\S]*?)"'
 
     # 该爬虫所用的settings信息
     custom_settings = wenku8
@@ -116,31 +116,14 @@ class Wenku8Spider(scrapy.Spider):
         :param response:
         :return:
         '''
-        # print([response.text])
         print(response.meta["item"])
 
-        # for i in self.reglux(response.text, self.html_container, False)[0].replace('<br />','').split('&nbsp;&nbsp;&nbsp;&nbsp;'):
-        #     print(i)
-        # 输出成文本
-        #     with open('2333.txt', 'a+', encoding='utf-8') as f:
-        #         f.write(i.replace('\r\n\r\n','\r\n'))
-        #     temp_dict = {
-        #         '正文': self.reglux(full_text, temp_re, False)[0],
-        #         '正则表达式': temp_re,
-        #         '卷名': title,
-        #         '章节名': chapter[1],
-        #         '所属小说': response.meta["item"]['书名'],
-        #         '章节地址': 'https://www.wenku8.net/novel/{}/{}'.format(response.url[27:-4], chapter[0]),
-        #         '更新时间': datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-        #         '章节插画': [],
-        #     }
-        # print(self.reglux(response.text, self.html_container, False)[0].replace('<br />','').split('&nbsp;&nbsp;&nbsp;&nbsp;'))
         # 章节插入
         item = wenku8ChapterItem()
         item['name'] = response.meta['item']['书名']
         item['title'] = response.meta['title']
-        item['chapter'] = response.meta['chapter']
-        item['fullName'] = '{name}_{title}_{chapter}'.format(name=response.meta['item']['书名'], title=response.meta['title'],chapter=response.meta['chapter'])
+        item['chapter'] = response.meta['chapter'][-1]
+        item['fullName'] = '{name}_{title}_{chapter}'.format(name=response.meta['item']['书名'], title=response.meta['title'],chapter=response.meta['chapter'][-1])
         item['worksNum'] = len(self.reglux(response.text, self.html_container, False)[0].replace('<br />','').replace('&nbsp;&nbsp;&nbsp;&nbsp;','').replace('\r\n\r\n','\r\n'))
         item['updateTime'] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         item['chapterImgurls'] = str([])
