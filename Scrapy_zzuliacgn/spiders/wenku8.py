@@ -101,7 +101,6 @@ class Wenku8Spider(scrapy.Spider):
             main_dict['小说目录'] = self.titleCheck(Chapter)
             yield scrapy.Request(url=main_dict["小说全本地址"], callback=self.full_text,meta={"item": main_dict})
         else:
-            # todo 卷名和章节分类方法存在问题，id 5
             main_dict['小说目录'] = self.titleCuter(Chapter)
             # print(main_dict["小说目录"])
             for m in main_dict["小说目录"]:
@@ -281,15 +280,30 @@ class Wenku8Spider(scrapy.Spider):
 
     # 卷名识别以及章节从属（新）
     def titleCuter(self,index,ikey = 'vcss'):
-        t = []
-        c = []
+        '''
+        整理卷名和章节名的从属关系，采集将会按每个tr行为一个列表元素，每个列表元素中还有嵌套的元组元素
+        :param index:
+        :param ikey:
+        :return:
+        '''
+        # print(index)
+        t = [] # 卷名列表
+        c_temp = [] # 章节临时列表，用于整合列表元素里的元组元素
+        c = [] # 章节列表
         for i in index:
             if ikey in i:
                 t.append(self.reglux(i,self.Chapter_title,False)[0])
+                c.append(c_temp)
+                c_temp.clear()# 清空列表
             else:
-                c.append(self.reglux(i,self.Chapter_name,False))
-        print(t)
-        print(c)
+                c_temp += self.reglux(i,self.Chapter_name,False)
+                # c_temp.append(self.reglux(i,self.Chapter_name,False))
+        # print(t)
+        # print('t:%s'%len(t))
+        # print(c)
+        # print('c:%s'%len(c))
+        # for i in c:
+        #     print(i)
         resdict = dict(zip(t,c))
         print(resdict)
         return resdict
