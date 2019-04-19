@@ -109,13 +109,34 @@ class Wenku8Spider(scrapy.Spider):
                     print(response.urljoin(n[0]))
                     yield scrapy.Request(url=response.urljoin(n[0]), callback=self.html_text,meta={"item": main_dict,'title':m,'chapter':n,})
 
+            # todo 字数问题待解决
+            print('总字数：%s'%self.res_worksNum)
+            # 小说基础信息
+            item = wenku8Item()
+            item['novelName'] = response.meta["item"]['书名']
+            item['writer'] = response.meta["item"]['作者']
+            item['illustrator'] = response.meta["item"]['插画师']
+            item['fromPress'] = response.meta["item"]['文库名']
+            item['intro'] = response.meta["item"]['简介']
+            item['headerImage'] = response.meta["item"]['封面']
+            item['resWorksNum'] = self.res_worksNum
+            item['types_id'] = response.meta["item"]['类型']
+            item['action'] = response.meta["item"]['文章状态']
+            item['isdelete'] = 0
+
+            # 小说总字数清零
+            self.res_worksNum = 0
+
+            yield item
+
     def html_text(self,response):
         '''
         通过html页面采集小说
         :param response:
         :return:
         '''
-        print(response.meta["item"])
+        # for i in response.meta["item"]:
+        #     print('%s:%s'%(i,response.meta["item"][i]))
 
         # 章节插入
         item = wenku8ChapterItem()
@@ -128,11 +149,16 @@ class Wenku8Spider(scrapy.Spider):
         item['chapterImgurls'] = str([])
         item['container'] = self.reglux(response.text, self.html_container, False)[0].replace('<br />','').replace('&nbsp;&nbsp;&nbsp;&nbsp;','').replace('\r\n\r\n','\r\n')
         item['isdelete'] = 0
-        yield item
         # 判断为图片章节
         if len(self.reglux(response.text, self.html_container, False)[0].replace('<br />','').split('&nbsp;&nbsp;&nbsp;&nbsp;')) == 1:
+            item['container'] = ''
+            item['worksNum'] = 0
             item['chapterImgurls'] = str(self.reglux(response.text, self.novel_chaImage, False))
 
+        # print(len(self.reglux(response.text, self.html_container, False)[0].replace('<br />','').replace('&nbsp;&nbsp;&nbsp;&nbsp;','').replace('\r\n\r\n','\r\n')))
+        self.res_worksNum += len(self.reglux(response.text, self.html_container, False)[0].replace('<br />','').replace('&nbsp;&nbsp;&nbsp;&nbsp;','').replace('\r\n\r\n','\r\n'))   # 字数统计
+        print(self.res_worksNum)
+        # yield item
 
     def full_text(self,response):
         '''
