@@ -93,6 +93,7 @@ class Wenku8Spider(scrapy.Spider):
         '''
         Chapter = self.reglux(response.text, '<tr>([\s\S]*?)</tr>',False)
         main_dict = response.meta["item"]
+        base_info = False
         # print(self.titleCuter(Chapter))
         # print(self.titleCheck(Chapter))
         # for i in response.meta["item"]['小说目录']:
@@ -102,33 +103,33 @@ class Wenku8Spider(scrapy.Spider):
             yield scrapy.Request(url=main_dict["小说全本地址"], callback=self.full_text,meta={"item": main_dict})
         else:
             main_dict['小说目录'] = self.titleCuter(Chapter)
-            # print(main_dict["小说目录"])
-            # for m in main_dict["小说目录"]:
-            #     print(m)
-            #     print(main_dict["小说目录"][m])
-                # for n in main_dict["小说目录"][m]:
+            for m in main_dict["小说目录"]:
+                for n in main_dict["小说目录"][m]:
                     # print('%s %s' % (n, response.urljoin(n[0])))
-                    # yield scrapy.Request(url=response.urljoin(n[0]), callback=self.html_text,meta={"item": main_dict,'title':m,'chapter':n,})
+                    yield scrapy.Request(url=response.urljoin(n[0]), callback=self.html_text,meta={"item": main_dict,'title':m,'chapter':n,})
+                if m == list(main_dict["小说目录"])[-1]:
+                    print('判定为最终卷名 %s'%m)
+                    base_info = True
+            if base_info:
+                # todo 小说基础信息在字数统计完成前提前插入的问题
+                print('总字数：%s'%self.res_worksNum)
+                # 小说基础信息
+                item = wenku8Item()
+                item['novelName'] = response.meta["item"]['书名']
+                item['writer'] = response.meta["item"]['作者']
+                item['illustrator'] = response.meta["item"]['插画师']
+                item['fromPress'] = response.meta["item"]['文库名']
+                item['intro'] = response.meta["item"]['简介']
+                item['headerImage'] = response.meta["item"]['封面']
+                item['resWorksNum'] = self.res_worksNum
+                item['types_id'] = response.meta["item"]['类型']
+                item['action'] = response.meta["item"]['文章状态']
+                item['isdelete'] = 0
 
-            # todo 字数问题待解决
-            print('总字数：%s'%self.res_worksNum)
-            # 小说基础信息
-            item = wenku8Item()
-            item['novelName'] = response.meta["item"]['书名']
-            item['writer'] = response.meta["item"]['作者']
-            item['illustrator'] = response.meta["item"]['插画师']
-            item['fromPress'] = response.meta["item"]['文库名']
-            item['intro'] = response.meta["item"]['简介']
-            item['headerImage'] = response.meta["item"]['封面']
-            item['resWorksNum'] = self.res_worksNum
-            item['types_id'] = response.meta["item"]['类型']
-            item['action'] = response.meta["item"]['文章状态']
-            item['isdelete'] = 0
+                # 小说总字数清零
+                self.res_worksNum = 0
 
-            # 小说总字数清零
-            self.res_worksNum = 0
-
-            yield item
+                # yield item
 
     def html_text(self,response):
         '''
@@ -136,8 +137,6 @@ class Wenku8Spider(scrapy.Spider):
         :param response:
         :return:
         '''
-        # for i in response.meta["item"]:
-        #     print('%s:%s'%(i,response.meta["item"][i]))
         print('%s %s' % (response.meta['chapter'][-1], response.url))
         # 章节插入
         item = wenku8ChapterItem()
@@ -150,13 +149,14 @@ class Wenku8Spider(scrapy.Spider):
         item['chapterImgurls'] = str([])
         item['container'] = self.reglux(response.text, self.html_container, False)[0].replace('<br />','').replace('&nbsp;&nbsp;&nbsp;&nbsp;','').replace('\r\n\r\n','\r\n')
         item['isdelete'] = 0
+
+        # todo 部分非插图章节似乎也自带有图片，需要解决
         # 判断为图片章节
         if len(self.reglux(response.text, self.html_container, False)[0].replace('<br />','').split('&nbsp;&nbsp;&nbsp;&nbsp;')) == 1:
             item['container'] = ''
             item['worksNum'] = 0
             item['chapterImgurls'] = str(self.reglux(response.text, self.novel_chaImage, False))
 
-        print('章节 %s url:%s 字数：%s '%(response.meta['chapter'][-1],response.url,len(self.reglux(response.text, self.html_container, False)[0].replace('<br />','').replace('&nbsp;&nbsp;&nbsp;&nbsp;','').replace('\r\n\r\n','\r\n'))))
         self.res_worksNum += len(self.reglux(response.text, self.html_container, False)[0].replace('<br />','').replace('&nbsp;&nbsp;&nbsp;&nbsp;','').replace('\r\n\r\n','\r\n'))   # 字数统计
         print(self.res_worksNum)
         # yield item
