@@ -103,9 +103,9 @@ class Wenku8Spider(scrapy.Spider):
         else:
             main_dict['小说目录'] = self.titleCuter(Chapter)
             # print(main_dict["小说目录"])
-            for m in main_dict["小说目录"]:
-                print(m)
-                print(main_dict["小说目录"][m])
+            # for m in main_dict["小说目录"]:
+            #     print(m)
+            #     print(main_dict["小说目录"][m])
                 # for n in main_dict["小说目录"][m]:
                     # print('%s %s' % (n, response.urljoin(n[0])))
                     # yield scrapy.Request(url=response.urljoin(n[0]), callback=self.html_text,meta={"item": main_dict,'title':m,'chapter':n,})
@@ -313,24 +313,18 @@ class Wenku8Spider(scrapy.Spider):
         :param ikey:
         :return:
         '''
-        # print(index)
         t = [] # 卷名列表
-        c_temp = [] # 章节临时列表，用于整合列表元素里的元组元素
         c = [] # 章节列表
         for i in index:
             if ikey in i:
+                # 发现卷名，并添加卷名到卷名列表
                 t.append(self.reglux(i,self.Chapter_title,False)[0])
-                c.append(c_temp)
-                c_temp.clear()# 清空列表
+                # 同时在章节列表添加一个空列表元素，保持与卷名列表的下标一致
+                # 章节列表中的每一个列表元素里所有元组元素，即是对应卷名列表下标的所属章节
+                c.append([])
             else:
-                c_temp += self.reglux(i,self.Chapter_name,False)
-                # c_temp.append(self.reglux(i,self.Chapter_name,False))
-        # print(t)
-        # print('t:%s'%len(t))
-        # print(c)
-        # print('c:%s'%len(c))
-        # for i in c:
-        #     print(i)
+                # 章节列表末尾元素与卷名列表最新卷名元素下标一致
+                c[-1] += self.reglux(i,self.Chapter_name,False)
         resdict = dict(zip(t,c))
         print(resdict)
         return resdict
