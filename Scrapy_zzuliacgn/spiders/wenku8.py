@@ -104,10 +104,11 @@ class Wenku8Spider(scrapy.Spider):
             main_dict['小说目录'] = self.titleCuter(Chapter)
             # print(main_dict["小说目录"])
             for m in main_dict["小说目录"]:
-                for n in main_dict["小说目录"][m]:
-                    print(n)
-                    print(response.urljoin(n[0]))
-                    yield scrapy.Request(url=response.urljoin(n[0]), callback=self.html_text,meta={"item": main_dict,'title':m,'chapter':n,})
+                print(m)
+                print(main_dict["小说目录"][m])
+                # for n in main_dict["小说目录"][m]:
+                    # print('%s %s' % (n, response.urljoin(n[0])))
+                    # yield scrapy.Request(url=response.urljoin(n[0]), callback=self.html_text,meta={"item": main_dict,'title':m,'chapter':n,})
 
             # todo 字数问题待解决
             print('总字数：%s'%self.res_worksNum)
@@ -137,7 +138,7 @@ class Wenku8Spider(scrapy.Spider):
         '''
         # for i in response.meta["item"]:
         #     print('%s:%s'%(i,response.meta["item"][i]))
-
+        print('%s %s' % (response.meta['chapter'][-1], response.url))
         # 章节插入
         item = wenku8ChapterItem()
         item['name'] = response.meta['item']['书名']
@@ -155,7 +156,7 @@ class Wenku8Spider(scrapy.Spider):
             item['worksNum'] = 0
             item['chapterImgurls'] = str(self.reglux(response.text, self.novel_chaImage, False))
 
-        # print(len(self.reglux(response.text, self.html_container, False)[0].replace('<br />','').replace('&nbsp;&nbsp;&nbsp;&nbsp;','').replace('\r\n\r\n','\r\n')))
+        print('章节 %s url:%s 字数：%s '%(response.meta['chapter'][-1],response.url,len(self.reglux(response.text, self.html_container, False)[0].replace('<br />','').replace('&nbsp;&nbsp;&nbsp;&nbsp;','').replace('\r\n\r\n','\r\n'))))
         self.res_worksNum += len(self.reglux(response.text, self.html_container, False)[0].replace('<br />','').replace('&nbsp;&nbsp;&nbsp;&nbsp;','').replace('\r\n\r\n','\r\n'))   # 字数统计
         print(self.res_worksNum)
         # yield item
