@@ -103,6 +103,20 @@ class Wenku8Spider(scrapy.Spider):
                     # print('%s %s' % (n, response.urljoin(n[0])))
                     yield scrapy.Request(url=response.urljoin(n[0]), callback=self.html_text,meta={"item": main_dict,'title':m,'chapter':n,})
 
+       # 小说基础信息
+        item = wenku8Item()
+        item['novelName'] = response.meta["item"]['书名']
+        item['writer'] = response.meta["item"]['作者']
+        item['illustrator'] = response.meta["item"]['插画师']
+        item['fromPress'] = response.meta["item"]['文库名']
+        item['intro'] = response.meta["item"]['简介']
+        item['headerImage'] = response.meta["item"]['封面']
+        item['resWorksNum'] = response.meta["item"]['全书字数']
+        item['types_id'] = response.meta["item"]['类型']
+        item['action'] = response.meta["item"]['文章状态']
+        item['isdelete'] = 0
+        yield item
+
     def html_text(self,response):
         '''
         通过html页面采集小说
@@ -136,19 +150,6 @@ class Wenku8Spider(scrapy.Spider):
         print(self.res_worksNum)
         yield item
 
-        # 小说基础信息
-        item = wenku8Item()
-        item['novelName'] = response.meta["item"]['书名']
-        item['writer'] = response.meta["item"]['作者']
-        item['illustrator'] = response.meta["item"]['插画师']
-        item['fromPress'] = response.meta["item"]['文库名']
-        item['intro'] = response.meta["item"]['简介']
-        item['headerImage'] = response.meta["item"]['封面']
-        item['resWorksNum'] = self.res_worksNum
-        item['types_id'] = response.meta["item"]['类型']
-        item['action'] = response.meta["item"]['文章状态']
-        item['isdelete'] = 0
-        yield item
 
     def full_text(self,response):
         '''
@@ -200,12 +201,6 @@ class Wenku8Spider(scrapy.Spider):
                     print('正则获取失败！尝试转换gbk全本！')
                     yield scrapy.Request(url='http://dl.wkcdn.com/txtgbk/%s'%response.url[28:], callback=self.full_text, meta={"item": response.meta['item']})
 
-                # 字数统计
-                temp_dict['章节字数'] = len(''.join(temp_dict['正文']))
-                response.meta["item"]['全书字数'] += temp_dict['章节字数']
-                if temp_dict['章节字数'] < 10:
-                    print(temp_dict)
-
                 # 放弃直接使用wenku8图片
                 if temp_dict['正文'] in '\r\n\r\n\r\n\r\n' and len(temp_dict['正文']) <= 8:
                     temp_dict['章节名'] = '本册插画'
@@ -231,19 +226,6 @@ class Wenku8Spider(scrapy.Spider):
                 # with open('%s—%s.txt' % (title,chapter[1]), 'w', encoding='utf-8') as f:
                 #     f.write(self.reglux(full_text, temp_re, False)[0])
 
-        #小说基础信息
-        item = wenku8Item()
-        item['novelName'] = response.meta["item"]['书名']
-        item['writer'] = response.meta["item"]['作者']
-        item['illustrator'] = response.meta["item"]['插画师']
-        item['fromPress'] = response.meta["item"]['文库名']
-        item['intro'] = response.meta["item"]['简介']
-        item['headerImage'] = response.meta["item"]['封面']
-        item['resWorksNum'] = response.meta["item"]['全书字数']
-        item['types_id'] = response.meta["item"]['类型']
-        item['action'] = response.meta["item"]['文章状态']
-        item['isdelete'] = 0
-        yield item
 
     def logFile(self,FileName,content,model = 'a+',encod = 'utf-8',Line_break = True):
         '''
