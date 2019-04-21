@@ -59,6 +59,7 @@ class wenku8Item(scrapy.Item):
     intro = scrapy.Field()  # 小说简介
     headerImage = scrapy.Field()    # 小说封面
     resWorksNum = scrapy.Field()    # 小说字数
+    index = scrapy.Field()    # 小说字数
     types_id = scrapy.Field()   #小说所属类型
     action = scrapy.Field()    # 连载状态
     isdelete = scrapy.Field()  # 资源详细页地址

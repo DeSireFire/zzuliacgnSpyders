@@ -15,7 +15,6 @@ class Wenku8Spider(scrapy.Spider):
     end_check_times = 0 # 发现“出现错误”的次数
     copyrightId = [] # 发现“版权问题”的次数
     errorId = [] # 发现“文章不存在的次数”的次数
-    res_worksNum = 0 # 小说总字数
 
     # 正则变量
     novel_name='e:16px; font-weight: bold; line-height: 150%"><b>([\s\S]*?)</b>'  # 小说名
@@ -53,7 +52,7 @@ class Wenku8Spider(scrapy.Spider):
                 '文库名': self.reglux(response.text, self.novel_fromPress, False)[0],
                 '简介': self.reglux(response.text, self.novel_intro, False)[0],
                 '封面': self.reglux(response.text, self.novel_headerImage, False)[0],
-                '全书字数': 0,
+                '全书字数': 0,# 通过web后端查找计算即可
                 '类型': 14,  # 轻小说 id 14
                 # '字数':self.reglux(response.text, self.novel_worksNum,False)[0],
                 '文章状态': self.reglux(response.text, self.novel_action, False)[0],
@@ -100,7 +99,6 @@ class Wenku8Spider(scrapy.Spider):
             main_dict['小说目录'] = self.titleCuter(Chapter)
             for m in main_dict["小说目录"]:
                 for n in main_dict["小说目录"][m]:
-                    # print('%s %s' % (n, response.urljoin(n[0])))
                     yield scrapy.Request(url=response.urljoin(n[0]), callback=self.html_text,meta={"item": main_dict,'title':m,'chapter':n,})
 
        # 小说基础信息
@@ -113,6 +111,7 @@ class Wenku8Spider(scrapy.Spider):
         item['headerImage'] = response.meta["item"]['封面']
         item['resWorksNum'] = response.meta["item"]['全书字数']
         item['types_id'] = response.meta["item"]['类型']
+        item['index'] = self.index_simplify(main_dict['小说目录'])
         item['action'] = response.meta["item"]['文章状态']
         item['isdelete'] = 0
         yield item
@@ -133,7 +132,7 @@ class Wenku8Spider(scrapy.Spider):
         item['worksNum'] = len(self.reglux(response.text, self.html_container, False)[0].replace('<br />','').replace('&nbsp;&nbsp;&nbsp;&nbsp;','').replace('\r\n\r\n','\r\n'))
         item['updateTime'] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         item['chapterImgurls'] = str([])
-        # item['container'] = self.reglux(response.text, self.html_container, False)[0].replace('<br />','').replace('&nbsp;&nbsp;&nbsp;&nbsp;','').replace('\r\n\r\n','\r\n')
+        item['container'] = self.reglux(response.text, self.html_container, False)[0].replace('<br />','').replace('&nbsp;&nbsp;&nbsp;&nbsp;','').replace('\r\n\r\n','\r\n')
         item['container'] = ''
         item['isdelete'] = 0
 
@@ -146,8 +145,6 @@ class Wenku8Spider(scrapy.Spider):
             item['container'] = ''
             item['worksNum'] = 0
 
-        self.res_worksNum += len(self.reglux(response.text, self.html_container, False)[0].replace('<br />','').replace('&nbsp;&nbsp;&nbsp;&nbsp;','').replace('\r\n\r\n','\r\n'))   # 字数统计
-        print(self.res_worksNum)
         yield item
 
 
@@ -226,6 +223,19 @@ class Wenku8Spider(scrapy.Spider):
                 # with open('%s—%s.txt' % (title,chapter[1]), 'w', encoding='utf-8') as f:
                 #     f.write(self.reglux(full_text, temp_re, False)[0])
 
+    def index_simplify(self,templist):
+        '''
+        将titleCuter函数的返回值简化，去除元组的url地址
+        :param templist: 有元组元素的列表
+        :return: 列表
+        '''
+        tempindex = {}
+        for title, chapters in zip(list(templist), list(templist.values())):
+            tempindex[title] = []
+            for chapter in chapters:
+                tempindex[title].append(chapter[-1])
+        print(tempindex)
+        return tempindex
 
     def logFile(self,FileName,content,model = 'a+',encod = 'utf-8',Line_break = True):
         '''
