@@ -92,14 +92,15 @@ class Wenku8Spider(scrapy.Spider):
         '''
         Chapter = self.reglux(response.text, '<tr>([\s\S]*?)</tr>',False)
         main_dict = response.meta["item"]
-        if response.meta["采集方式"] == 'full_text':
-            main_dict['小说目录'] = self.titleCuter(Chapter)
-            yield scrapy.Request(url=main_dict["小说全本地址"], callback=self.full_text,meta={"item": main_dict})
-        else:
-            main_dict['小说目录'] = self.titleCuter(Chapter)
-            for m in main_dict["小说目录"]:
-                for n in main_dict["小说目录"][m]:
-                    yield scrapy.Request(url=response.urljoin(n[0]), callback=self.html_text,meta={"item": main_dict,'title':m,'chapter':n,})
+        main_dict['小说目录'] = self.titleCuter(Chapter)
+        # if response.meta["采集方式"] == 'full_text':
+        #     main_dict['小说目录'] = self.titleCuter(Chapter)
+        #     yield scrapy.Request(url=main_dict["小说全本地址"], callback=self.full_text,meta={"item": main_dict})
+        # else:
+        #     main_dict['小说目录'] = self.titleCuter(Chapter)
+        #     for m in main_dict["小说目录"]:
+        #         for n in main_dict["小说目录"][m]:
+        #             yield scrapy.Request(url=response.urljoin(n[0]), callback=self.html_text,meta={"item": main_dict,'title':m,'chapter':n,})
 
        # 小说基础信息
         item = wenku8Item()
@@ -111,7 +112,7 @@ class Wenku8Spider(scrapy.Spider):
         item['headerImage'] = response.meta["item"]['封面']
         item['resWorksNum'] = response.meta["item"]['全书字数']
         item['types_id'] = response.meta["item"]['类型']
-        item['index'] = self.index_simplify(main_dict['小说目录'])
+        item['contents'] = str(self.index_simplify(main_dict['小说目录']))
         item['action'] = response.meta["item"]['文章状态']
         item['isdelete'] = 0
         yield item
