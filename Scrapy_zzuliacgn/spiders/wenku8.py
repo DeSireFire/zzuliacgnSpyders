@@ -9,7 +9,7 @@ class Wenku8Spider(scrapy.Spider):
     allowed_domains = ["wenku8.net","wkcdn.com","httporg.bin"]
     # start_urls = ['https://www.wenku8.net/book/5.htm']
     # start_urls = ['https://www.wenku8.net/book/601.htm']
-    start_urls = ['https://www.wenku8.net/book/1.htm']
+    start_urls = ['https://www.wenku8.net/book/2500.htm']
 
     # 控制变量
     end_check_times = 0 # 发现“出现错误”的次数
@@ -60,8 +60,9 @@ class Wenku8Spider(scrapy.Spider):
                 '小说全本地址': 'http://dl.wkcdn.com/txtutf8{num}.txt'.format(num=self.reglux(response.text, self.index_url, False)[0][28:-10]),
             }
             # 版权问题小说采用全文切割法采集，否则使用html采集
+            # todo ValueError: 'https://www.wenku8.net/book/2545.htm' is not in list 待解决
+            self.copyrightId.append(response.url)
             if '版权问题' in response.text:
-                self.copyrightId.append(response.url)
                 yield scrapy.Request(url=main_dict["小说目录"], callback=self.index_info, meta={"item": main_dict,'采集方式':['full_text','html_text','chapter_text'][0]})
             else:
                 yield scrapy.Request(url=main_dict["小说目录"], callback=self.index_info, meta={"item": main_dict,'采集方式':['full_text','html_text','chapter_text'][1]})
@@ -80,6 +81,7 @@ class Wenku8Spider(scrapy.Spider):
                 yield scrapy.Request(nextUrl, callback=self.parse)  # 检查下一页
             else:
                 self.logFile(os.path.join('wenku8', 'wenku8Iderror.txt'), sorted(set(self.errorId[:-1]),key=self.errorId[:-1].index), 'w+', 'utf-8', True)
+                print(self.copyrightId)
                 self.logFile(os.path.join('wenku8', 'wenku8Copyright.txt'), sorted(set(self.copyrightId),key=self.errorId[:-1].index), 'w+', 'utf-8', True)
                 print('出现错误的次数超过5次，爬虫停止！')
 
@@ -93,14 +95,14 @@ class Wenku8Spider(scrapy.Spider):
         Chapter = self.reglux(response.text, '<tr>([\s\S]*?)</tr>',False)
         main_dict = response.meta["item"]
         main_dict['小说目录'] = self.titleCuter(Chapter)
-        # if response.meta["采集方式"] == 'full_text':
-        #     main_dict['小说目录'] = self.titleCuter(Chapter)
-        #     yield scrapy.Request(url=main_dict["小说全本地址"], callback=self.full_text,meta={"item": main_dict})
-        # else:
-        #     main_dict['小说目录'] = self.titleCuter(Chapter)
-        #     for m in main_dict["小说目录"]:
-        #         for n in main_dict["小说目录"][m]:
-        #             yield scrapy.Request(url=response.urljoin(n[0]), callback=self.html_text,meta={"item": main_dict,'title':m,'chapter':n,})
+        if response.meta["采集方式"] == 'full_text':
+            main_dict['小说目录'] = self.titleCuter(Chapter)
+            yield scrapy.Request(url=main_dict["小说全本地址"], callback=self.full_text,meta={"item": main_dict})
+        else:
+            main_dict['小说目录'] = self.titleCuter(Chapter)
+            for m in main_dict["小说目录"]:
+                for n in main_dict["小说目录"][m]:
+                    yield scrapy.Request(url=response.urljoin(n[0]), callback=self.html_text,meta={"item": main_dict,'title':m,'chapter':n,})
 
        # 小说基础信息
         item = wenku8Item()
@@ -249,8 +251,7 @@ class Wenku8Spider(scrapy.Spider):
         print(os.path.join(os.getcwd(),'log','%s'%FileName))
         with open(os.path.join(os.getcwd(),'log','%s'%FileName), '{mode}'.format(mode = model), encoding=encod) as f:
             for i in content:
-                if Line_break:
-                    f.write(i + "\n")
+                if Line_break:                    f.write(i + "\n")
                 else:
                     f.write(i)
 
