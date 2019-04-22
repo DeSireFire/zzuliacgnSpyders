@@ -7,9 +7,9 @@ from Scrapy_zzuliacgn.items import wenku8Item,wenku8ChapterItem
 class Wenku8Spider(scrapy.Spider):
     name = "wenku8"
     allowed_domains = ["wenku8.net","wkcdn.com","httporg.bin"]
-    start_urls = ['https://www.wenku8.net/book/5.htm']
+    # start_urls = ['https://www.wenku8.net/book/5.htm']
     # start_urls = ['https://www.wenku8.net/book/601.htm']
-    # start_urls = ['https://www.wenku8.net/book/1.htm']
+    start_urls = ['https://www.wenku8.net/book/1.htm']
 
     # 控制变量
     end_check_times = 0 # 发现“出现错误”的次数
@@ -66,10 +66,10 @@ class Wenku8Spider(scrapy.Spider):
             else:
                 yield scrapy.Request(url=main_dict["小说目录"], callback=self.index_info, meta={"item": main_dict,'采集方式':['full_text','html_text','chapter_text'][1]})
             # print('http://dl.wkcdn.com/txtgbk{num}.txt'.format(num=self.reglux(response.text, self.index_url, False)[0][28:-10]))
-            # yield scrapy.Request(url=main_dict["小说目录"], callback=self.index_info, meta={"item": main_dict})
+            yield scrapy.Request(url=main_dict["小说目录"], callback=self.index_info, meta={"item": main_dict})
 
             self.end_check_times = 0  # 计数初始化
-            # yield scrapy.Request(nextUrl, callback=self.parse)  # 跳转下一页
+            yield scrapy.Request(nextUrl, callback=self.parse)  # 跳转下一页
         else: # 出现错误
             self.end_check_times += 1  # 增加一次失败次数
             print('页面出现错误！')
@@ -93,7 +93,7 @@ class Wenku8Spider(scrapy.Spider):
         Chapter = self.reglux(response.text, '<tr>([\s\S]*?)</tr>',False)
         main_dict = response.meta["item"]
         if response.meta["采集方式"] == 'full_text':
-            main_dict['小说目录'] = self.titleCheck(Chapter)
+            main_dict['小说目录'] = self.titleCuter(Chapter)
             yield scrapy.Request(url=main_dict["小说全本地址"], callback=self.full_text,meta={"item": main_dict})
         else:
             main_dict['小说目录'] = self.titleCuter(Chapter)
@@ -202,9 +202,6 @@ class Wenku8Spider(scrapy.Spider):
                 if temp_dict['正文'] in '\r\n\r\n\r\n\r\n' and len(temp_dict['正文']) <= 8:
                     temp_dict['章节名'] = '本册插画'
                     temp_dict['正文'] = '本册插画'
-
-                # 精简一下小说目录
-                tempindex[title].append(chapter[1])
 
                 # 章节插入
                 item = wenku8ChapterItem()
