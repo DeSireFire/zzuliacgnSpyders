@@ -60,9 +60,8 @@ class Wenku8Spider(scrapy.Spider):
                 '小说全本地址': 'http://dl.wkcdn.com/txtutf8{num}.txt'.format(num=self.reglux(response.text, self.index_url, False)[0][28:-10]),
             }
             # 版权问题小说采用全文切割法采集，否则使用html采集
-            # todo ValueError: 'https://www.wenku8.net/book/2545.htm' is not in list 待解决
-            self.copyrightId.append(response.url)
             if '版权问题' in response.text:
+                self.copyrightId.append(response.url)
                 yield scrapy.Request(url=main_dict["小说目录"], callback=self.index_info, meta={"item": main_dict,'采集方式':['full_text','html_text','chapter_text'][0]})
             else:
                 yield scrapy.Request(url=main_dict["小说目录"], callback=self.index_info, meta={"item": main_dict,'采集方式':['full_text','html_text','chapter_text'][1]})
@@ -82,7 +81,7 @@ class Wenku8Spider(scrapy.Spider):
             else:
                 self.logFile(os.path.join('wenku8', 'wenku8Iderror.txt'), sorted(set(self.errorId[:-1]),key=self.errorId[:-1].index), 'w+', 'utf-8', True)
                 print(self.copyrightId)
-                self.logFile(os.path.join('wenku8', 'wenku8Copyright.txt'), sorted(set(self.copyrightId),key=self.errorId[:-1].index), 'w+', 'utf-8', True)
+                self.logFile(os.path.join('wenku8', 'wenku8Copyright.txt'), sorted(set(self.copyrightId)), 'w+', 'utf-8', True)
                 print('出现错误的次数超过5次，爬虫停止！')
 
 
