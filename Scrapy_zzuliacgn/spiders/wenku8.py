@@ -7,9 +7,8 @@ from Scrapy_zzuliacgn.items import wenku8Item,wenku8ChapterItem
 class Wenku8Spider(scrapy.Spider):
     name = "wenku8"
     allowed_domains = ["wenku8.net","wkcdn.com","httporg.bin"]
-    # start_urls = ['https://www.wenku8.net/book/5.htm']
     # start_urls = ['https://www.wenku8.net/book/601.htm']
-    start_urls = ['https://www.wenku8.net/book/2500.htm']
+    start_urls = ['https://www.wenku8.net/book/1.htm']
 
     # 控制变量
     end_check_times = 0 # 发现“出现错误”的次数
@@ -95,10 +94,8 @@ class Wenku8Spider(scrapy.Spider):
         main_dict = response.meta["item"]
         main_dict['小说目录'] = self.titleCuter(Chapter)
         if response.meta["采集方式"] == 'full_text':
-            main_dict['小说目录'] = self.titleCuter(Chapter)
             yield scrapy.Request(url=main_dict["小说全本地址"], callback=self.full_text,meta={"item": main_dict})
         else:
-            main_dict['小说目录'] = self.titleCuter(Chapter)
             for m in main_dict["小说目录"]:
                 for n in main_dict["小说目录"][m]:
                     yield scrapy.Request(url=response.urljoin(n[0]), callback=self.html_text,meta={"item": main_dict,'title':m,'chapter':n,})
@@ -307,40 +304,3 @@ class Wenku8Spider(scrapy.Spider):
         resdict = dict(zip(t,c))
         print(resdict)
         return resdict
-
-    # 卷名识别以及章节从属
-    def titleCheck(self, tlist, tkey='class="vcss"'):
-        """
-        若出现卷名和章节名都在同一个页面时（例如：https://www.wenku8.net/novel/1/1592/index.htm）,
-        用此函数整理分卷和其所属章节的关系,并用reglux_list方法进行清洗
-        :param tlist:列表，包含卷名和章节名的列表
-        :param tkey:字符串，用来判断区分列表卷名和章节的关键字
-        :return:recdict
-        """
-        tids = []  # 筛选出“原矿”列表中，所有册名的下标
-        for i in tlist:
-            if tkey in i:
-                tids.append(tlist.index(i))
-        count = 0
-        recdict = {}
-        if len(tids) == 1:
-            print('该小说未发现分多卷')
-            recdict[self.reglux(tlist[0], self.Chapter_title, False)[0]] = self.reglux(''.join(tlist[1:]),self.Chapter_name, False)
-        else:
-            while count + 1 < len(tids):  # 使用卷名下标来对列表中属于章节的部分切片出来
-                # print(tids[count])
-                # print(tids[count+1])
-                # print(tlist[tids[count]:tids[count + 1]])
-                temp = tlist[tids[count]:tids[count + 1]]
-                if count + 1 == len(tids) - 1:
-                    temp = tlist[tids[count + 1]:]
-                    '''
-                    temp[0]必包含卷名，其后temp[1:]均为其所属章节名
-                    temp[0] 取出带有卷名未清洗的html，例如：<td class="vcss" colspan="4">短篇</td>；
-                    self.reglux(temp[0],self.Chapter_title,False 通过正则得到列表，下标0的位置为清洗出的卷名,例如：短篇；
-                    self.reglux(''.join(temp[1:]),self.Chapter_name,False) 通过正则清洗，得到章节地址和章节名；
-                    recdict为字典，recdict[key]=value,给键赋值；
-                    '''
-                recdict[ self.reglux(temp[0],self.Chapter_title,False)[0] ] = self.reglux(''.join(temp[1:]),self.Chapter_name,False)
-                count += 1
-        return recdict
