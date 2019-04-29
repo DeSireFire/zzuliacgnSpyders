@@ -4,7 +4,7 @@ import scrapy,re,chardet,random,datetime,os.path,json
 
 class QidianSpider(scrapy.Spider):
     name = "qidian"
-    allowed_domains = ["qidian.com"]
+    allowed_domains = ["qidian.com","xanbhx.com"]
     start_urls = ['https://book.qidian.com/info/1']
 
     custom_settings = {
@@ -62,8 +62,13 @@ class QidianSpider(scrapy.Spider):
                 tempdict['小说目录']['%s[%s]' % (i['vN'], list(datas['data']['vs']).index(i))].append(self.chaster_handler(n))
         # print(tempdict)
         # # 输出成文本
-        with open('%s.txt'%response.meta['item']['书名'], 'w', encoding='utf-8') as f:
-            f.write(str(tempdict))
+        # with open('%s.txt'%response.meta['item']['书名'], 'w', encoding='utf-8') as f:
+        #     f.write(str(tempdict))
+        biquge_pape = 'https://sou.xanbhx.com/search?siteid=qula&q=%s+%s'%(tempdict['书名'],tempdict['作者'])
+        yield scrapy.Request(url=biquge_pape, callback=self.biquge_handler, meta={"item": tempdict})
+
+    def biquge_handler(self,response):
+        pass
 
     def chaster_handler(self,temp):
         '''
