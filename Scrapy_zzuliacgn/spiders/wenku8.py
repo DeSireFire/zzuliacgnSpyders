@@ -99,6 +99,7 @@ class Wenku8Spider(scrapy.Spider):
             for m in main_dict["小说目录"]:
                 for n in main_dict["小说目录"][m]:
                     yield scrapy.Request(url=response.urljoin(n[0]), callback=self.html_text,meta={"item": main_dict,'title':m,'chapter':n,})
+            # yield scrapy.Request(url=main_dict["小说全本地址"], callback=self.full_text, meta={"item": main_dict})
 
        # 小说基础信息
         item = wenku8Item()
