@@ -77,21 +77,18 @@ class QidianSpider(scrapy.Spider):
             print(datas)
         indexList = []
         for i in list(datas['data']['vs']):
-            # tempdict['小说目录']['%s[%s]'%(i['vN'],list(datas['data']['vs']).index(i))] = []
             for n in i['cs']:   # {'uuid': 73, 'cN': '第七十章 期待', 'uT': '2016-12-05 15:08:26', 'cnt': 2826, 'cU': '_AaqI-dPJJ4uTkiRw_sFYA2/35xIQH46UOnwrjbX3WA1AA2', 'id': 343467910, 'sS': 1}
-                n['卷名'] = i['vN']
+                n['所属卷名'] = i['vN']
                 tempdict['总字数'] += n['cnt'] # 字数统计
                 indexList.append(self.chaster_handler(n))
-                # tempdict['小说目录']['%s[%s]' % (i['vN'], list(datas['data']['vs']).index(i))].append(self.chaster_handler(n))
+
         tempdict['小说目录'] = indexList
+
         # 最新章节名
-        #     print(tempdict['小说目录'])
-        tempdict['最新章节'] = tempdict['小说目录']
-        # tempdict['最新章节'] = tempdict['小说目录'][list(tempdict['小说目录'].keys())[-1]][-1]
-        print(tempdict['最新章节'])
+        tempdict['最新章节'] = tempdict['小说目录'][-1]['章节名']
 
         # todo 此处可把小说基础信息item通过tempdict入库
-        # print(tempdict)
+        # print(tempdict) item{......}
 
         # todo 正文内容的开始
         url1 = 'https://www.biquge.com.cn/search.php?keyword=%s'%(tempdict['书名'])
@@ -131,35 +128,44 @@ class QidianSpider(scrapy.Spider):
         # 其他小说网站正则（用于获取小说具体地址（含所有章节表的网页地址）例如：https://www.biquge.com.cn/book/23488/）
         bookURL = '<a cpos="title" href="([\s\S]*?)" title="%s" class="result-game-item-title-link" target="_blank">'%response.meta['item']['书名']
         # 判断可能存在系列续集小说名字不对应的情况，例如：“斗罗大陆III龙王传说”变成“龙王传说”才能检索到
-        if '暂无' in self.reglux(response.text, bookURL, False)[0] or response.meta['item']['小说目录'][list(response.meta['item']['小说目录'].keys())[-1]][-1]['章节名'] not in response.text:
+        if '暂无' in self.reglux(response.text, bookURL, False)[0] or response.meta['item']['最新章节'] not in response.text:
             print('未查找到该书或未发现该书有最新章节，执行 planB')
             newRequest = response.meta['requests'].pop(0)
-            newRequest.meta['requests']= response.meta['requests']
+            newRequest.meta['requests'] = response.meta['requests']
             yield newRequest
         else:
-            # [('https://www.biquge.com.cn/book/23488/', '圣墟')]
-            yield scrapy.Request(url=self.reglux(response.text, bookURL, False)[0], callback=self.content_handler, meta={"item": response.meta['item']})
+            # self.reglux(response.text, bookURL, False) = [('https://www.biquge.com.cn/book/23488/', '圣墟')]
+            meta = {
+                "item": response.meta['item'],
+                'requests': response.meta['requests'],
+                'xpath':[("/html/body/div[@id='wrapper']/div[@class='box_con'][2]/div[@id='list']/dl/dd/a/",0,None,),
+                         ("/html/body/div[@id='wrapper']/div[@class='content_read']/div[@class='box_con']/div[@id='content']",0,None)],
+                'url_home':r'https://www.biquge.com.cn',
+            }
+            yield scrapy.Request(url=self.reglux(response.text, bookURL, False)[0], callback=self.content_handler, meta=meta)
 
     def content_handlerSecond(self,response):
         bookURL = '<td class="odd"><a href="([\s\S]*?)">%s</a></td>'%response.meta['item']['书名']
         print(self.reglux(response.text, bookURL, False))
-        if '暂无' in self.reglux(response.text, bookURL, False)[0] or response.meta['item']['小说目录'][list(response.meta['item']['小说目录'].keys())[-1]][-1]['章节名'] not in response.text:
+        if '暂无' in self.reglux(response.text, bookURL, False)[0] or response.meta['item']['最新章节'] not in response.text:
             print('未查找到该书或未发现该书有最新章节，执行 planC')
             newRequest = response.meta['requests'].pop(0)
-            newRequest.meta['requests']= response.meta['requests']
+            newRequest.meta['requests'] = response.meta['requests']
+            newRequest.meta['xpath'] = ["/html/body/div[@id='wrapper']/div[@class='box_con'][2]/div[@id='list']/dl/dd/a/@href",9,None]
             yield newRequest
         else:
-            yield scrapy.Request(url=self.reglux(response.text, bookURL, False)[0], callback=self.content_handler, meta={"item": response.meta['item'],'requests':response.meta['requests']})
+            newRequest = scrapy.Request(url=self.reglux(response.text, bookURL, False)[0], callback=self.content_handler, meta={"item": response.meta['item'],'requests':response.meta['requests']})
+            newRequest.meta['xpath'] = ["/html/body/div[@id='wrapper']/div[@class='box_con'][2]/div[@id='list']/dl/dd/a/",0,None]
+            yield newRequest
 
     def content_handlerThird(self,response):
         bookURL = '</span><spanclass="s2"><ahref="([\s\S]*?)"target="_blank">%s</a></span><spanclass="s3"><ahref="'%response.meta['item']['书名']
         print(self.reglux(response.text, bookURL, False))
-        if '暂无' in self.reglux(response.text, bookURL, True)[0] or response.meta['item']['小说目录'][list(response.meta['item']['小说目录'].keys())[-1]][-1]['章节名'] not in response.text:
+        if '暂无' in self.reglux(response.text, bookURL, True)[0] or response.meta['item']['最新章节'] not in response.text:
             print('未查找到该书或未发现该书有最新章节，执行 planD')
-            print(response.url)
-            print(response.meta['item']['书名'])
             newRequest = response.meta['requests'].pop(0)
-            newRequest.meta['requests']= response.meta['requests']
+            newRequest.meta['requests'] = response.meta['requests']
+            newRequest.meta['xpath'] = ["/html/body/div[@id='wrapper']/div[@class='box_con'][2]/div[@id='list']/dl/dd/a/@href",9]
             yield newRequest
         else:
             yield scrapy.Request(url='http://www.560xs.com%s'%self.reglux(response.text, bookURL, True)[0], callback=self.content_handler, meta={"item": response.meta['item'],'requests':response.meta['requests']})
@@ -167,10 +173,11 @@ class QidianSpider(scrapy.Spider):
     def content_handlerFourth(self, response):
         bookURL = '<a cpos="title" href="([\s\S]*?)" title="%s" class="result-game-item-title-link" target="_blank">'%response.meta['item']['书名']
         print(self.reglux(response.text, bookURL, False))
-        if '暂无' in self.reglux(response.text, bookURL, False)[0] or response.meta['item']['小说目录'][list(response.meta['item']['小说目录'].keys())[-1]][-1]['章节名'] not in response.text:
+        if '暂无' in self.reglux(response.text, bookURL, False)[0] or response.meta['item']['最新章节'] not in response.text:
             print('未查找到该书或未发现该书有最新章节，执行 planF')
             newRequest = response.meta['requests'].pop(0)
-            newRequest.meta['requests']= response.meta['requests']
+            newRequest.meta['requests'] = response.meta['requests']
+            newRequest.meta['xpath'] = ["/html/body/div[@id='wrapper']/div[@class='box_con'][2]/div[@id='list']/dl/dd/a/@href",9]
             yield newRequest
         else:
             yield scrapy.Request(url=self.reglux(response.text, bookURL, False)[0],callback=self.content_handler, meta={"item": response.meta['item'],'requests':response.meta['requests']})
@@ -179,11 +186,10 @@ class QidianSpider(scrapy.Spider):
         bookURL = '<a cpos="title" href="([\s\S]*?)" title="%s" class="result-game-item-title-link" target="_blank">'%response.meta['item']['书名']
         print(response.text)
         print(self.reglux(response.text, bookURL, False))
-        if '暂无' in self.reglux(response.text, bookURL, False)[0] or response.meta['item']['小说目录'][list(response.meta['item']['小说目录'].keys())[-1]][-1]['章节名'] not in response.text:
+        if '暂无' in self.reglux(response.text, bookURL, False)[0] or response.meta['item']['最新章节'] not in response.text:
             print('未查找到该书或未发现该书有最新章节，执行 planF')
             print(response.url)
             print(response.meta['item']['书名'])
-            # return response.meta['requests'].pop(0)
         else:
             yield scrapy.Request(url=self.reglux(response.text, bookURL, False)[0],callback=self.content_handler, meta={"item": response.meta['item'],'requests':response.meta['requests']})
 
@@ -193,27 +199,23 @@ class QidianSpider(scrapy.Spider):
         :param response:
         :return:
         '''
-        # 列表的下表位置对应ajax_index函数中的request1.meta['requests']的下标位置
-        # 选择方法：ajax_index函数中的request1.meta['requests']长度-response.meta['requests']长度
-        # 元组元素的第二个元素用于.extract()[xxx数字:]
-        xpathList = [
-            (("/html/body/div[@id='wrapper']/div[@class='box_con'][2]/div[@id='list']/dl/dd/a/@href"),9),
-            (("/html/body/div[@id='wrapper']/div[@class='box_con'][2]/div[@id='list']/dl/dd/a/@href"),9),
-        ]
-        print(len(response.xpath(xpathList[4-len(response.meta['requests'])][0]).extract()[xpathList[4-len(response.meta['requests'])][1]:]))
+        urlList = response.xpath(response.meta['xpath'][0][0]+'@href').extract()[response.meta['xpath'][0][1]:response.meta['xpath'][0][2]]
 
+        # 章节对齐
+        if len(urlList) != len(response.meta['item']['小说目录']):
+            nameList = response.xpath(response.meta['xpath'][0][0]+'text()').extract()[response.meta['xpath'][0][1]:response.meta['xpath'][0][2]]
+            for i in response.meta['item']['小说目录']:
+                if i['章节名'] not in nameList and '第' not in i['章节名']:    # 坑哭了['第三百四十五章 太有灵性了', '第四百四十六章 抓神兽幼崽', '第三百四十七章 神秘幼崽',] 垃圾网站章节标错
+                    print('%s 章节内容未在该网找到。'%i)
+                    response.meta['item']['小说目录'].remove(i)
 
-        # for m in response.meta['item']['小说目录']:
-        #     for n in response.meta['item']['小说目录'][m]:
-        #         print('<dd><a href="([\s\S]*?)">%s</a></dd>'%n['章节名'])
-                # print(self.reglux(response.text, '<dd><a href="([\s\S]*?)">%s</a></dd>'%n['章节名'], False))
-        # print(response.text)
-        # print(self.reglux(response.text, '<dt>《圣墟（圣虚）》正文</dt>([\s\S]*?)</dl>', False)[0].split('<dd>'))
-        # print(str("".join(response.text.split())))
-        # if '站内搜索' in response.text:
-        #     print(response.text)
-        # with open(os.path.join(os.getcwd(),'log','qidian','%s.txt'%response['item']['书名']), 'w', encoding='utf-8') as f:
-        #     f.write(str("".join(response.text.split())))
+        for url,info in zip(urlList,response.meta['item']['小说目录']):
+            yield scrapy.Request(url=response.meta['url_home']+url,callback=self.content_downLoader, meta={"item": info,'xpath':response.meta['xpath'][1]})
+
+    def content_downLoader(self,response):
+        # print(len(response.xpath(response.meta['xpath'][0]).extract()))
+        with open(os.path.join(os.getcwd(),'log','qidian','%s.txt'%response.meta['item']['章节名']), 'w', encoding='utf-8') as f:
+            f.write(self.clearHtml(response.xpath(response.meta['xpath'][0]).extract()[0]))
 
     # def number_handler(self,numberStr):
     #     '''
@@ -237,6 +239,14 @@ class QidianSpider(scrapy.Spider):
     #     for i in number_dict:
     #         numberStr = numberStr.replace(i,number_dict[i])
     #     return numberStr
+    def clearHtml(self,tempStr):
+        '''
+        清除html标签,
+        todo ㈧㈠Δ』中文网Ｗｗ％Ｗ．ん８⒈Ｚｗ．ＣＯＭ 沙雕字符清洗
+        :param tempStr: 字符串
+        :return:
+        '''
+        return re.sub(r'</?\w+[^>]*>', '', tempStr)
 
     def chaster_handler(self,temp):
         '''
