@@ -124,7 +124,7 @@ class ProxyMiddleware():
 
     # 强制使用代理
     # def process_request(self, request, spider):
-    #     proxy = self.get_random_proxy(request)
+    #     proxy = self.get_random_proxy()
     #     if proxy:
     #         url = 'https://{proxy}'.format(proxy=proxy)
     #         self.logger.debug('使用代理 %s'%proxy)

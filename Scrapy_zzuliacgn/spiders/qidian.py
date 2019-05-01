@@ -15,7 +15,7 @@ class QidianSpider(scrapy.Spider):
     增则大军
     '''
     # 起点小说正则
-    book_url = '<h4><a href="([\s\S]*?)" target="_blank" data-eid="qd_B58" data-bid="([\s\S]*?)">([\s\S]*?)</a></h4>\r'
+    book_url = '<h4><a href="([\s\S]*?)" target="_blank" data-eid="([\s\S]*?)" data-bid="([\s\S]*?)">([\s\S]*?)</a></h4>\r'
     book_name_writer = '<title>《([\s\S]*?)》_([\s\S]*?)著_([\s\S]*?)_起点中文网</title>'
     book_writer_intro = '<pclass="(extend)?">([\s\S]*?)<citeclass="iconfontbluej_infoUnfold"title="展开介绍">\ue623</cite></p></div><divclass="info-wrap"data-l1="9">'
     book_writer_works = '<spanclass="book"></span><p>作品总数</p><em>([\s\S]*?)</em></li><li><spanclass="word">'
@@ -33,14 +33,17 @@ class QidianSpider(scrapy.Spider):
     def start_requests(self):
         for page in range(1,2):
             print("开始获取第%s页的小说"%page)
-            visited_url='https://www.qidian.com/all?&page=%s'%page
+            # visited_url='https://www.qidian.com/all?&page=%s'%page
+            visited_url='https://www.qidian.com/all?orderId=&style=1&pageSize=20&siteid=1&pubflag=0&hiddenField=0&page=%s'%page
             yield scrapy.Request(url=visited_url,callback=self.parse)
 
     def parse(self, response):
-        # print(self.reglux(response.text, self.book_url, False))
+        print(self.reglux(response.text, self.book_url, False))
+        if '暂无具体信息...' in self.reglux(response.text, self.book_url, False):
+            print(response.text)
         for i in self.reglux(response.text, self.book_url, False)[6:8]:
             print(i)
-            yield scrapy.Request(url='https://book.qidian.com/info/%s'%i[1], callback=self.parse_novel_info,meta={'csrf':str(response.headers.getlist("Set-Cookie")[0],encoding = "utf-8").split(';')[0]})
+            yield scrapy.Request(url='https://book.qidian.com/info/%s'%i[-2], callback=self.parse_novel_info,meta={'csrf':str(response.headers.getlist("Set-Cookie")[0],encoding = "utf-8").split(';')[0]})
 
 
     def parse_novel_info(self, response):
@@ -108,14 +111,14 @@ class QidianSpider(scrapy.Spider):
         request5 = scrapy.Request(url5, callback=self.content_handlerFourth, meta={"item": tempdict})
 
 
-        request2.meta['requests'] = [
+        request3.meta['requests'] = [
             request2,
             request3,
             request4,
             request5,
         ]
 
-        return request2
+        return request3
 
 
 
@@ -147,10 +150,13 @@ class QidianSpider(scrapy.Spider):
             yield scrapy.Request(url=self.reglux(response.text, bookURL, False)[0], callback=self.content_handler, meta=meta)
 
     def content_handlerSecond(self,response):
+        '''
+        这个网站，速度不够快啊，可能需要代理了
+        '''
         bookURL = '<td class="odd"><a href="([\s\S]*?)">%s</a></td>'%response.meta['item']['书名']
         print(self.reglux(response.text, bookURL, False))
         if '暂无' in self.reglux(response.text, bookURL, False)[0] or response.meta['item']['最新章节'] not in response.text:
-            print('未查找到该书或未发现该书有最新章节，执行 planC')
+            print('未查找到 %s 或未发现该书有最新章节，执行 planC' % response.meta['item']['书名'])
             newRequest = response.meta['requests'].pop(0)
             newRequest.meta['requests'] = response.meta['requests']
             yield newRequest
@@ -166,15 +172,21 @@ class QidianSpider(scrapy.Spider):
 
     def content_handlerThird(self,response):
         bookURL = '</span><spanclass="s2"><ahref="([\s\S]*?)"target="_blank">%s</a></span><spanclass="s3"><ahref="'%response.meta['item']['书名']
-        print(self.reglux(response.text, bookURL, False))
+        print(self.reglux(response.text, bookURL, True))
         if '暂无' in self.reglux(response.text, bookURL, True)[0] or response.meta['item']['最新章节'] not in response.text:
-            print('未查找到该书或未发现该书有最新章节，执行 planD')
+            print('未查找到 %s 或未发现该书有最新章节，执行 planD'%response.meta['item']['书名'])
             newRequest = response.meta['requests'].pop(0)
             newRequest.meta['requests'] = response.meta['requests']
-            newRequest.meta['xpath'] = ["/html/body/div[@id='wrapper']/div[@class='box_con'][2]/div[@id='list']/dl/dd/a/@href",9]
-            yield newRequest
+            # yield newRequest
         else:
-            yield scrapy.Request(url='http://www.560xs.com%s'%self.reglux(response.text, bookURL, True)[0], callback=self.content_handler, meta={"item": response.meta['item'],'requests':response.meta['requests']})
+            meta = {
+                "item": response.meta['item'],
+                'requests': response.meta['requests'],
+                'xpath':[("/html/body/div[@id='wrapper']/div[@class='box_con'][2]/div[@id='list']/dl/dd/a/",12,None,),
+                         ("/html/body/div[@class='content_read']/div[@class='box_con']/div[@id='content']",0,None)],
+                'url_home':r'http://www.560xs.com',
+            }
+            yield scrapy.Request(url='http://www.560xs.com%s'%self.reglux(response.text, bookURL, True)[0], callback=self.content_handler, meta=meta)
 
     def content_handlerFourth(self, response):
         bookURL = '<a cpos="title" href="([\s\S]*?)" title="%s" class="result-game-item-title-link" target="_blank">'%response.meta['item']['书名']
