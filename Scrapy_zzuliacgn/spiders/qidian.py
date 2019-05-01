@@ -104,21 +104,21 @@ class QidianSpider(scrapy.Spider):
         url3 = 'http://www.560xs.com/SearchBook.aspx?keyword=%s'%(tempdict['书名'])
         request3 = scrapy.Request(url3, callback=self.content_handlerThird, meta={"item": tempdict})
 
-        url4 = 'https://wap.xbiquge6.com/search.php?keyword=%s'%(tempdict['书名'])
+        url4 = 'https://www.xbiquge6.com/search.php?keyword=%s'%(tempdict['书名'])
         request4 = scrapy.Request(url4, callback=self.content_handlerFourth, meta={"item": tempdict})
 
         url5 = 'https://m.zwdu.com/search.php?keyword=%s'%(tempdict['书名'])
         request5 = scrapy.Request(url5, callback=self.content_handlerFourth, meta={"item": tempdict})
 
 
-        request3.meta['requests'] = [
+        request4.meta['requests'] = [
             request2,
             request3,
             request4,
             request5,
         ]
 
-        return request3
+        return request4
 
 
 
@@ -191,14 +191,21 @@ class QidianSpider(scrapy.Spider):
     def content_handlerFourth(self, response):
         bookURL = '<a cpos="title" href="([\s\S]*?)" title="%s" class="result-game-item-title-link" target="_blank">'%response.meta['item']['书名']
         print(self.reglux(response.text, bookURL, False))
+        # if '暂无' in self.reglux(response.text, bookURL, False)[0]:
         if '暂无' in self.reglux(response.text, bookURL, False)[0] or response.meta['item']['最新章节'] not in response.text:
-            print('未查找到该书或未发现该书有最新章节，执行 planF')
+            print('未查找到 %s 或未发现该书有最新章节，执行 planF' % response.meta['item']['书名'])
             newRequest = response.meta['requests'].pop(0)
             newRequest.meta['requests'] = response.meta['requests']
-            newRequest.meta['xpath'] = ["/html/body/div[@id='wrapper']/div[@class='box_con'][2]/div[@id='list']/dl/dd/a/@href",9]
-            yield newRequest
+            # yield newRequest
         else:
-            yield scrapy.Request(url=self.reglux(response.text, bookURL, False)[0],callback=self.content_handler, meta={"item": response.meta['item'],'requests':response.meta['requests']})
+            meta = {
+                "item": response.meta['item'],
+                'requests': response.meta['requests'],
+                'xpath':[("/html/body/div[@id='wrapper']/div[@class='box_con'][2]/div[@id='list']/dl/dd/a/",0,None,),
+                         ("/html/body/div[@id='wrapper']/div[@class='content_read']/div[@class='box_con']/div[@id='content']",0,None)],
+                'url_home':r'https://www.xbiquge6.com',
+            }
+            yield scrapy.Request(url=self.reglux(response.text, bookURL, False)[0],callback=self.content_handler, meta=meta)
 
     def content_handlerFifth(self, response):
         bookURL = '<a cpos="title" href="([\s\S]*?)" title="%s" class="result-game-item-title-link" target="_blank">'%response.meta['item']['书名']
@@ -256,14 +263,14 @@ class QidianSpider(scrapy.Spider):
     #     for i in number_dict:
     #         numberStr = numberStr.replace(i,number_dict[i])
     #     return numberStr
-
     def clearHtml(self,tempStr):
         '''
         清除html标签,
-        todo ㈧㈠Δ』中文网Ｗｗ％Ｗ．ん８⒈Ｚｗ．ＣＯＭ 沙雕字符清洗
+
         :param tempStr: 字符串
         :return:
         '''
+        # todo ㈧㈠Δ』中文网Ｗｗ％Ｗ．ん８⒈Ｚｗ．ＣＯＭ沙雕字符清洗
         return re.sub(r'</?\w+[^>]*>', '', tempStr)
 
     def chaster_handler(self,temp):
