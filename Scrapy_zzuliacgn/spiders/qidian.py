@@ -38,7 +38,8 @@ class QidianSpider(scrapy.Spider):
 
     def parse(self, response):
         # print(self.reglux(response.text, self.book_url, False))
-        for i in self.reglux(response.text, self.book_url, False)[:1]:
+        for i in self.reglux(response.text, self.book_url, False)[6:8]:
+            print(i)
             yield scrapy.Request(url='https://book.qidian.com/info/%s'%i[1], callback=self.parse_novel_info,meta={'csrf':str(response.headers.getlist("Set-Cookie")[0],encoding = "utf-8").split(';')[0]})
 
 
@@ -107,14 +108,14 @@ class QidianSpider(scrapy.Spider):
         request5 = scrapy.Request(url5, callback=self.content_handlerFourth, meta={"item": tempdict})
 
 
-        request1.meta['requests'] = [
+        request2.meta['requests'] = [
             request2,
             request3,
             request4,
             request5,
         ]
 
-        return request1
+        return request2
 
 
 
@@ -139,6 +140,7 @@ class QidianSpider(scrapy.Spider):
                 "item": response.meta['item'],
                 'requests': response.meta['requests'],
                 'xpath':[("/html/body/div[@id='wrapper']/div[@class='box_con'][2]/div[@id='list']/dl/dd/a/",0,None,),
+                         # ("/html/body/div[@id='wrapper']/div[@class='content_read']/div[@class='box_con']/div[@id='content']/text()",0,None)],
                          ("/html/body/div[@id='wrapper']/div[@class='content_read']/div[@class='box_con']/div[@id='content']",0,None)],
                 'url_home':r'https://www.biquge.com.cn',
             }
@@ -151,12 +153,16 @@ class QidianSpider(scrapy.Spider):
             print('未查找到该书或未发现该书有最新章节，执行 planC')
             newRequest = response.meta['requests'].pop(0)
             newRequest.meta['requests'] = response.meta['requests']
-            newRequest.meta['xpath'] = ["/html/body/div[@id='wrapper']/div[@class='box_con'][2]/div[@id='list']/dl/dd/a/@href",9,None]
             yield newRequest
         else:
-            newRequest = scrapy.Request(url=self.reglux(response.text, bookURL, False)[0], callback=self.content_handler, meta={"item": response.meta['item'],'requests':response.meta['requests']})
-            newRequest.meta['xpath'] = ["/html/body/div[@id='wrapper']/div[@class='box_con'][2]/div[@id='list']/dl/dd/a/",0,None]
-            yield newRequest
+            meta = {
+                "item": response.meta['item'],
+                'requests': response.meta['requests'],
+                'xpath':[("/html/body/div[@id='wrapper']/div[@class='box_con'][2]/div[@id='list']/dl/dd/a/",9,None,),
+                         ("/html/body/div[@id='wrapper']/div[@class='content_read']/div[@class='box_con']/div[@id='content']",0,None)],
+                'url_home':r'',
+            }
+            yield scrapy.Request(url=self.reglux(response.text, bookURL, False)[0], callback=self.content_handler, meta=meta)
 
     def content_handlerThird(self,response):
         bookURL = '</span><spanclass="s2"><ahref="([\s\S]*?)"target="_blank">%s</a></span><spanclass="s3"><ahref="'%response.meta['item']['书名']
@@ -200,21 +206,20 @@ class QidianSpider(scrapy.Spider):
         :return:
         '''
         urlList = response.xpath(response.meta['xpath'][0][0]+'@href').extract()[response.meta['xpath'][0][1]:response.meta['xpath'][0][2]]
-
-        # 章节对齐
+        # # 章节对齐
         if len(urlList) != len(response.meta['item']['小说目录']):
             nameList = response.xpath(response.meta['xpath'][0][0]+'text()').extract()[response.meta['xpath'][0][1]:response.meta['xpath'][0][2]]
             for i in response.meta['item']['小说目录']:
                 if i['章节名'] not in nameList and '第' not in i['章节名']:    # 坑哭了['第三百四十五章 太有灵性了', '第四百四十六章 抓神兽幼崽', '第三百四十七章 神秘幼崽',] 垃圾网站章节标错
                     print('%s 章节内容未在该网找到。'%i)
                     response.meta['item']['小说目录'].remove(i)
-
         for url,info in zip(urlList,response.meta['item']['小说目录']):
             yield scrapy.Request(url=response.meta['url_home']+url,callback=self.content_downLoader, meta={"item": info,'xpath':response.meta['xpath'][1]})
 
     def content_downLoader(self,response):
         # print(len(response.xpath(response.meta['xpath'][0]).extract()))
         with open(os.path.join(os.getcwd(),'log','qidian','%s.txt'%response.meta['item']['章节名']), 'w', encoding='utf-8') as f:
+            # f.write(response.xpath(response.meta['xpath'][0]).extract()[response.meta['xpath'][1]:response.meta['xpath'][2]])
             f.write(self.clearHtml(response.xpath(response.meta['xpath'][0]).extract()[0]))
 
     # def number_handler(self,numberStr):
@@ -239,6 +244,7 @@ class QidianSpider(scrapy.Spider):
     #     for i in number_dict:
     #         numberStr = numberStr.replace(i,number_dict[i])
     #     return numberStr
+
     def clearHtml(self,tempStr):
         '''
         清除html标签,
