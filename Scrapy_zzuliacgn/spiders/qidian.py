@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
-import scrapy,re,chardet,random,datetime,os.path,json
-
+import scrapy,re,chardet,random,datetime,os.path,json,difflib
 
 class QidianSpider(scrapy.Spider):
     name = "qidian"
@@ -107,18 +106,18 @@ class QidianSpider(scrapy.Spider):
         url4 = 'https://www.xbiquge6.com/search.php?keyword=%s'%(tempdict['书名'])
         request4 = scrapy.Request(url4, callback=self.content_handlerFourth, meta={"item": tempdict})
 
-        url5 = 'https://m.zwdu.com/search.php?keyword=%s'%(tempdict['书名'])
-        request5 = scrapy.Request(url5, callback=self.content_handlerFourth, meta={"item": tempdict})
+        url5 = 'https://www.zwdu.com/search.php?keyword=%s'%(tempdict['书名'])
+        request5 = scrapy.Request(url5, callback=self.content_handlerFifth, meta={"item": tempdict})
 
 
-        request4.meta['requests'] = [
+        request1.meta['requests'] = [
             request2,
             request3,
             request4,
             request5,
         ]
 
-        return request4
+        return request1
 
 
 
@@ -209,37 +208,52 @@ class QidianSpider(scrapy.Spider):
 
     def content_handlerFifth(self, response):
         bookURL = '<a cpos="title" href="([\s\S]*?)" title="%s" class="result-game-item-title-link" target="_blank">'%response.meta['item']['书名']
-        print(response.text)
         print(self.reglux(response.text, bookURL, False))
         if '暂无' in self.reglux(response.text, bookURL, False)[0] or response.meta['item']['最新章节'] not in response.text:
-            print('未查找到该书或未发现该书有最新章节，执行 planF')
+            print('未查找到该书或未发现该书有最新章节')
             print(response.url)
             print(response.meta['item']['书名'])
         else:
-            yield scrapy.Request(url=self.reglux(response.text, bookURL, False)[0],callback=self.content_handler, meta={"item": response.meta['item'],'requests':response.meta['requests']})
+            meta = {
+                "item": response.meta['item'],
+                'requests': response.meta['requests'],
+                'xpath':[("/html/body/div[@id='wrapper']/div[@class='box_con'][2]/div[@id='list']/dl/dd/a/",0,None,),
+                         ("/html/body/div[@id='wrapper']/div[@class='content_read']/div[@class='box_con']/div[@id='content']",0,None)],
+                'url_home':r'',
+            }
+            yield scrapy.Request(url=self.reglux(response.text, bookURL, False)[0],callback=self.content_handler, meta=meta)
+
+
 
     def content_handler(self,response):
         '''
         正文采集函数
-        :param response:
+        :param [i['章节名'] for i in response.meta['item']['小说目录']]:起点目录列表
+        :param list(set(nameList).difference(set(tempList))):在笔趣阁目录，但不在起点目录的集合
+        :param list(set([i['章节名'] for i in response.meta['item']['小说目录']]).difference(set(tempList))):在起点目录，但不在笔趣阁目录的集合
         :return:
         '''
         urlList = response.xpath(response.meta['xpath'][0][0]+'@href').extract()[response.meta['xpath'][0][1]:response.meta['xpath'][0][2]]
-        # # 章节对齐
-        if len(urlList) != len(response.meta['item']['小说目录']):
-            nameList = response.xpath(response.meta['xpath'][0][0]+'text()').extract()[response.meta['xpath'][0][1]:response.meta['xpath'][0][2]]
-            for i in response.meta['item']['小说目录']:
-                if i['章节名'] not in nameList and '第' not in i['章节名']:    # 坑哭了['第三百四十五章 太有灵性了', '第四百四十六章 抓神兽幼崽', '第三百四十七章 神秘幼崽',] 垃圾网站章节标错
-                    print('%s 章节内容未在该网找到。'%i)
-                    response.meta['item']['小说目录'].remove(i)
-        for url,info in zip(urlList,response.meta['item']['小说目录']):
-            yield scrapy.Request(url=response.meta['url_home']+url,callback=self.content_downLoader, meta={"item": info,'xpath':response.meta['xpath'][1]})
+        nameList = response.xpath(response.meta['xpath'][0][0]+'text()').extract()[response.meta['xpath'][0][1]:response.meta['xpath'][0][2]]
+
+        # 章节名校对
+        tempList = [i for i in [i['章节名'] for i in response.meta['item']['小说目录']] if i in nameList] # 起点目录列表与笔趣阁目录列表的交集
+        for m in list(set(nameList).difference(set(tempList))):
+            for n in list(set([i['章节名'] for i in response.meta['item']['小说目录']]).difference(set(tempList))):
+                if self.string_similar(m,n) > 0.8:
+                    print('%s %s 高度相同'%(m,n))
+                    nameList[nameList.index(n)] = m # 保持原有下标改笔趣阁列表元素
+
+        for info in response.meta['item']['小说目录']:
+            if info['章节名'] in nameList:
+                yield scrapy.Request(url=response.meta['url_home']+urlList[nameList.index(info['章节名'])],callback=self.content_downLoader, meta={"item": info,'xpath':response.meta['xpath'][1]})
 
     def content_downLoader(self,response):
         # print(len(response.xpath(response.meta['xpath'][0]).extract()))
         with open(os.path.join(os.getcwd(),'log','qidian','%s.txt'%response.meta['item']['章节名']), 'w', encoding='utf-8') as f:
             # f.write(response.xpath(response.meta['xpath'][0]).extract()[response.meta['xpath'][1]:response.meta['xpath'][2]])
             f.write(self.clearHtml(response.xpath(response.meta['xpath'][0]).extract()[0]))
+
 
     # def number_handler(self,numberStr):
     #     '''
@@ -263,11 +277,21 @@ class QidianSpider(scrapy.Spider):
     #     for i in number_dict:
     #         numberStr = numberStr.replace(i,number_dict[i])
     #     return numberStr
+
+    def string_similar(self,s1, s2):
+        '''
+        字符串相似度
+        :param s1:字符串,用于比较的字符串
+        :param s2:字符串,被比较的字符串
+        :return:
+        '''
+        return difflib.SequenceMatcher(None, s1, s2).quick_ratio()
+
     def clearHtml(self,tempStr):
         '''
         清除html标签,
 
-        :param tempStr: 字符串
+        :param tempStr: 字符串,需要清洗html的字符串
         :return:
         '''
         # todo ㈧㈠Δ』中文网Ｗｗ％Ｗ．ん８⒈Ｚｗ．ＣＯＭ沙雕字符清洗
