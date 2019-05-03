@@ -236,14 +236,30 @@ class QidianSpider(scrapy.Spider):
         urlList = response.xpath(response.meta['xpath'][0][0]+'@href').extract()[response.meta['xpath'][0][1]:response.meta['xpath'][0][2]]
         nameList = response.xpath(response.meta['xpath'][0][0]+'text()').extract()[response.meta['xpath'][0][1]:response.meta['xpath'][0][2]]
 
+        # if len(nameList) == len(response.meta['item']['小说目录']):
         # 章节名校对
         tempList = [i for i in [i['章节名'] for i in response.meta['item']['小说目录']] if i in nameList] # 起点目录列表与笔趣阁目录列表的交集
-        for m in list(set(nameList).difference(set(tempList))):
-            for n in list(set([i['章节名'] for i in response.meta['item']['小说目录']]).difference(set(tempList))):
-                # if self.string_similar(m,n) > 0.8 and nameList.index(m):
-                if self.string_similar(m,n) > 0.85:
-                    print('%s %s 高度相同'%(m,n))
-                    nameList[nameList.index(m)] = n # 保持原有下标改笔趣阁列表元素
+        tempList1 = list(set(nameList).difference(set(tempList)))
+        tempList2 = list(set([i['章节名'] for i in response.meta['item']['小说目录']]).difference(set(tempList)))
+        for m in tempList1:
+            similarity = []
+            for n in tempList2:
+                similarity.append(self.string_similar(m, n))
+            # if max(similarity) > 0.8:
+            #     print('%s %s 高度相似' % (m, tempList2[similarity.index(max(similarity))]))
+            #     nameList[nameList.index(m)] = tempList2[similarity.index(max(similarity))]  # 保持原有下标改笔趣阁列表元素
+            # if self.string_similar(m,n) > 0.8 and nameList.index(m):
+            if self.string_similar(m.strip(),tempList2[similarity.index(max(similarity))].strip()) > 0.85:
+                print('%s %s 高度相似'%(m.strip(),tempList2[similarity.index(max(similarity))].strip()))
+                nameList[nameList.index(m)] = tempList2[similarity.index(max(similarity))] # 保持原有下标改笔趣阁列表元素
+            else:
+                if self.string_similar(self.CtoE(m).strip(),self.CtoE(tempList2[similarity.index(max(similarity))]).strip()) >= 0.95:
+                    print('%s %s 转变英文符号 高度相似' % (m.strip(), tempList2[similarity.index(max(similarity))].strip()))
+                    nameList[nameList.index(m)] = tempList2[similarity.index(max(similarity))]  # 保持原有下标改笔趣阁列表元素
+                else:
+                    if self.string_similar(self.CtoE(m).strip(),re.sub(r'(/?\w+[^> ]*)', '', self.CtoE(tempList2[similarity.index(max(similarity))]).strip())) > 0.9:
+                        print('%s %s 去除括号符号 高度相似' % (m.strip(), tempList2[similarity.index(max(similarity))].strip()))
+                        nameList[nameList.index(m)] = tempList2[similarity.index(max(similarity))]  # 保持原有下标改笔趣阁列表元素
 
         for info in response.meta['item']['小说目录']:
             if info['章节名'] in nameList:
@@ -251,6 +267,11 @@ class QidianSpider(scrapy.Spider):
                 # yield scrapy.Request(url=response.meta['url_home']+urlList[nameList.index(info['章节名'])],callback=self.content_downLoader, meta={"item": info,'xpath':response.meta['xpath'][1]})
             else:
                 print('%s 未能从其他网站匹配到该章节文章'%info)
+        # else:
+        #     pass
+            # for url, info in zip(urlList, response.meta['item']['小说目录']):
+                # yield scrapy.Request(url=response.meta['url_home'] + url, callback=self.content_downLoader,meta={"item": info, 'xpath': response.meta['xpath'][1]})
+
     def content_downLoader(self,response):
         # print(len(response.xpath(response.meta['xpath'][0]).extract()))
         with open(os.path.join(os.getcwd(),'log','qidian','%s.txt'%response.meta['item']['章节名']), 'w', encoding='utf-8') as f:
@@ -282,6 +303,17 @@ class QidianSpider(scrapy.Spider):
     #     return numberStr
 
     # 工具函数
+    def CtoE(self,tempStr):
+        '''
+        中文符号转英文符号
+        :param tempStr: 字符串
+        :return:
+        '''
+        table = {ord(f): ord(t) for f, t in zip(
+            u'，。！？【】（）％＃＠＆１２３４５６７８９０',
+            u',.!?[]()%#@&1234567890')}
+        return tempStr.translate(table)
+
     def string_similar(self,s1, s2):
         '''
         字符串相似度

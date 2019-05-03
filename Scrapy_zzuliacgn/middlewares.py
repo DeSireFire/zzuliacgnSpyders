@@ -4,7 +4,6 @@
 #
 # See documentation in:
 # http://doc.scrapy.org/en/latest/topics/spider-middleware.html
-import json
 import logging
 import requests
 
