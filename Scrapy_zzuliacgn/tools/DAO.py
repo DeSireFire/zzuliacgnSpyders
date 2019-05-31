@@ -8,12 +8,18 @@ connect_dict = {
     # "user":DATABASES["default"]["USER"],
     # "passwd":DATABASES["default"]["PASSWORD"],
     # "db":DATABASES["default"]["NAME"],
-    "host": '192.168.0.102',
-    # "host": '192.168.37.128',
+    # "host": '192.168.0.102',
+    # # "host": '192.168.37.128',
+    # "port": 3306,
+    # "user": 'zzuliACGN',
+    # "passwd": 'DeSireFire233notRoot',
+    # "db": 'zzuli_ACGN',
+
+    "host": '45.77.254.61',
     "port": 3306,
-    "user": 'zzuliACGN',
-    "passwd": 'DeSireFire233notRoot',
-    "db": 'zzuli_ACGN',
+    "user": 'qidianTest',
+    "passwd": '8cSJAKZY4PkLJMyX',
+    "db": 'qidianTest',
 }
 
 
@@ -344,8 +350,11 @@ def main():
         # # 删除表数据并重置ID
         # Refresh_ID(db, "ZA_BT_rtypes")
         # Refresh_ID(db, "ZA_BT_items")
-        Refresh_ID(db, "ZA_Novel_detail")
-        Refresh_ID(db, "ZA_Novel_info")
+        # Refresh_ID(db, "ZA_Novel_detail")
+        # Refresh_ID(db, "ZA_Novel_info")
+        Refresh_ID(db, "QidianChapterItem")
+        Refresh_ID(db, "QidianItem")
+        Refresh_ID(db, "QidianWriterItem")
         print("*" * 50)
         # 查询
 
