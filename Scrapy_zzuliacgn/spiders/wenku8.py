@@ -114,7 +114,11 @@ class Wenku8Spider(scrapy.Spider):
         item['contents'] = str(self.index_simplify(main_dict['小说目录']))
         item['action'] = response.meta["item"]['文章状态']
         item['isdelete'] = 0
-        yield item
+        # yield item
+
+        # 输出成文本
+        with open('test.txt', 'w', encoding='utf-8') as f:
+            f.write(main_dict['小说目录'])
 
     def html_text(self,response):
         '''
@@ -145,7 +149,7 @@ class Wenku8Spider(scrapy.Spider):
             item['container'] = ''
             item['worksNum'] = 0
 
-        yield item
+        # yield item
 
 
     def full_text(self,response):
@@ -214,7 +218,7 @@ class Wenku8Spider(scrapy.Spider):
                 item['chapterImgurls'] = str(temp_dict['章节插画'])
                 item['container'] = temp_dict['正文']
                 item['isdelete'] = 0
-                yield item
+                # yield item
 
                 # 输出成文本
                 # with open('%s—%s.txt' % (title,chapter[1]), 'w', encoding='utf-8') as f:
