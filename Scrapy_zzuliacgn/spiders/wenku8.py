@@ -309,3 +309,7 @@ class Wenku8Spider(scrapy.Spider):
         resdict = dict(zip(t,c))
         print(resdict)
         return resdict
+
+if __name__ == '__main__':
+    from scrapy import cmdline
+    cmdline.execute(['scrapy', 'crawl', 'wenku8'])
