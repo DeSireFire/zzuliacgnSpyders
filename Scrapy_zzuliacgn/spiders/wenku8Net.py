@@ -25,11 +25,11 @@ class Wenku8netSpider(scrapy.Spider):
         firstDict = {
             '书名':self.xpathHandler(response,self.xpathDict['书名'])[0],
             '封面':self.xpathHandler(response,self.xpathDict['封面'])[0],
-            '文库分类':self.xpathHandler(response,self.xpathDict['文库分类'])[0],
-            '作者名':self.xpathHandler(response,self.xpathDict['作者名'])[0],
-            '文章状态':self.xpathHandler(response,self.xpathDict['文章状态'])[0],
-            '最后更新':self.xpathHandler(response,self.xpathDict['最后更新'])[0],
-            '全文字数':self.xpathHandler(response,self.xpathDict['全文字数'])[0],
+            '文库分类':self.xpathHandler(response,self.xpathDict['文库分类'])[0][5:],
+            '作者名':self.xpathHandler(response,self.xpathDict['作者名'])[0][5:],
+            '文章状态':self.xpathHandler(response,self.xpathDict['文章状态'])[0][5:],
+            '最后更新':self.xpathHandler(response,self.xpathDict['最后更新'])[0][5:],
+            '全文字数':self.xpathHandler(response,self.xpathDict['全文字数'])[0][5:],
             # '简介':max(self.xpathHandler(response,self.xpathDict['简介']), key=len),
             '简介':self.reglux(response.text,self.reDict['简介'],False)[0],
         }
