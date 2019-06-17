@@ -9,30 +9,38 @@ class Wenku8netSpider(scrapy.Spider):
 
     # xpath 字典
     xpathDict = {
-        '书名':"//table[1]//span//b/text()",
-        '封面':"//td//img[@vspace='0']/@src",
-        '文库分类':"//div[@id='content']/div[1]//tr[2]/td[1]/text()",
-        '作者名':"//div[@id='content']/div[1]//tr[2]/td[2]/text()",
-        '文章状态':"//div[@id='content']/div[1]//tr[2]/td[3]/text()",
+        'novelName':"//table[1]//span//b/text()",
+        'headerImage':"//td//img[@vspace='0']/@src",
+        'fromPress':"//div[@id='content']/div[1]//tr[2]/td[1]/text()",
+        'writer':"//div[@id='content']/div[1]//tr[2]/td[2]/text()",
+        'action':"//div[@id='content']/div[1]//tr[2]/td[3]/text()",
         '最后更新':"//div[@id='content']/div[1]//tr[2]/td[4]/text()",
-        '全文字数':"//div[@id='content']/div[1]//tr[2]/td[5]/text()",
+        'resWorksNum':"//div[@id='content']/div[1]//tr[2]/td[5]/text()",
     }
     # 正则字典
     reDict = {
-        '简介': '<span class="hottext">内容简介：</span><br /><span style="font-size:14px;">([\s\S]*?)</span>',
+        'intro': '<span class="hottext">内容简介：</span><br /><span style="font-size:14px;">([\s\S]*?)</span>',
     }
     def parse(self, response):
+        # firstDict = {
+        #     '书名':self.xpathHandler(response,self.xpathDict['书名'])[0],
+        #     '封面':self.xpathHandler(response,self.xpathDict['封面'])[0],
+        #     '文库分类':self.xpathHandler(response,self.xpathDict['文库分类'])[0][5:],
+        #     '作者名':self.xpathHandler(response,self.xpathDict['作者名'])[0][5:],
+        #     '文章状态':self.xpathHandler(response,self.xpathDict['文章状态'])[0][5:],
+        #     '最后更新':self.xpathHandler(response,self.xpathDict['最后更新'])[0][5:],
+        #     '全文字数':self.xpathHandler(response,self.xpathDict['全文字数'])[0][5:],
+        #     # '简介':max(self.xpathHandler(response,self.xpathDict['简介']), key=len),
+        #     '简介':self.reglux(response.text,self.reDict['简介'],False)[0],
+        # }
+
         firstDict = {
-            '书名':self.xpathHandler(response,self.xpathDict['书名'])[0],
-            '封面':self.xpathHandler(response,self.xpathDict['封面'])[0],
-            '文库分类':self.xpathHandler(response,self.xpathDict['文库分类'])[0][5:],
-            '作者名':self.xpathHandler(response,self.xpathDict['作者名'])[0][5:],
-            '文章状态':self.xpathHandler(response,self.xpathDict['文章状态'])[0][5:],
-            '最后更新':self.xpathHandler(response,self.xpathDict['最后更新'])[0][5:],
-            '全文字数':self.xpathHandler(response,self.xpathDict['全文字数'])[0][5:],
-            # '简介':max(self.xpathHandler(response,self.xpathDict['简介']), key=len),
-            '简介':self.reglux(response.text,self.reDict['简介'],False)[0],
+            'illustrator': '',
+            'types_id': '',
+            'contents': '',
+            'isdelete': 0,
         }
+
         print(firstDict)
 
     def xpathHandler(self,response,xpathStr):
