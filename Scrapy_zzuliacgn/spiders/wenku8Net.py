@@ -5,20 +5,20 @@ import scrapy
 class Wenku8netSpider(scrapy.Spider):
     name = "wenku8Net"
     allowed_domains = ["wenku8.net", "wkcdn.com"]
-    start_urls = ['https://www.wenku8.net/book/2.htm']
+    start_urls = ['https://www.wenku8.net/book/20.htm']
 
     # xpath 字典
     xpathDict = {
         'novelName':"//table[1]//span//b/text()",
         'headerImage':"//td//img[@vspace='0']/@src",
-        'fromPress':"//div[@id='content']/div[1]//tr[2]/td[1]/text()",
-        'writer':"//div[@id='content']/div[1]//tr[2]/td[2]/text()",
-        'action':"//div[@id='content']/div[1]//tr[2]/td[3]/text()",
-        '最后更新':"//div[@id='content']/div[1]//tr[2]/td[4]/text()",
+        'updateTime': "//div[@id='content']/div[1]//tr[2]/td[4]/text()",
         'resWorksNum':"//div[@id='content']/div[1]//tr[2]/td[5]/text()",
     }
-    # 正则字典
+    # 正则 字典
     reDict = {
+        'fromPress': '<td width="20%">文库分类：([\s\S]*?)</td>',
+        'writer': '<td width="20%">小说作者：([\s\S]*?)</td>',
+        'action': '<td width="20%">文章状态：([\s\S]*?)</td>',
         'intro': '<span class="hottext">内容简介：</span><br /><span style="font-size:14px;">([\s\S]*?)</span>',
     }
     def parse(self, response):
@@ -35,11 +35,15 @@ class Wenku8netSpider(scrapy.Spider):
         # }
 
         firstDict = {
-            'illustrator': '',
-            'types_id': '',
+            'illustrator': '暂时未知',
+            'types_id': 14,
             'contents': '',
             'isdelete': 0,
         }
+        for m,n in self.xpathDict.items():
+            firstDict[m] = self.xpathHandler(response,n)[0]
+        for m,n in self.reDict.items():
+            firstDict[m] = self.reglux(response.text,n,False)[0]
 
         print(firstDict)
 
@@ -74,7 +78,7 @@ class Wenku8netSpider(scrapy.Spider):
         if temp:
             return temp
         else:
-            return ['暂无具体信息...']
+            return ['暂无数据']
 
 if __name__ == '__main__':
     from scrapy import cmdline
