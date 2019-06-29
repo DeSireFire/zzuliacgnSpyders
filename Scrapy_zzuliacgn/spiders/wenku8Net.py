@@ -5,7 +5,7 @@ import scrapy
 class Wenku8netSpider(scrapy.Spider):
     name = "wenku8Net"
     allowed_domains = ["wenku8.net", "wkcdn.com"]
-    start_urls = ['https://www.wenku8.net/book/2589.htm']
+    start_urls = ['https://www.wenku8.net/book/2.htm']
 
     # xpath 字典
     xpathDict = {
@@ -35,23 +35,43 @@ class Wenku8netSpider(scrapy.Spider):
         # }
 
         firstDict = {
-            'illustrator': '暂时未知',
             'types_id': 14,
             'contents': '',
             'isdelete': 0,
+            'illustrator': '暂时未知',
         }
         for m,n in self.xpathDict.items():
             firstDict[m] = self.xpathHandler(response,n)[0]
         for m,n in self.reDict.items():
             firstDict[m] = self.reglux(response.text,n,False)[0]
 
+        novelId = int(response.url[28:-4])
+        urlDict = {
+            '小说目录':'https://www.wenku8.net/novel/{num}/{id}/index.htm'.format(
+                num = str((novelId + 1)//1000),
+                id = str(novelId)),
+            '小说全本':'http://dl.wenku8.com/down.php?type=utf8&id={id}'.format(id = novelId),
+
+        }
+
         # 判断是否正确获取小说信息
         if firstDict['novelName'] != '暂时未知':
-            self.nextPages(response)    # 加载下一页
-        else:
-            pass
-
+            yield scrapy.Request(url=urlDict['小说目录'], callback=self.directory, dont_filter= True) # 加载目录页
+        # yield scrapy.Request(url=self.nextPages(response), callback=self.parse) # 加载下一页
         print(firstDict)
+
+    def directory(self,response):
+        temp = [i for i in response.text.split('\r\n') if i != '']
+        print(len(temp))
+        for i in temp[47:-19]:
+            print([i])
+
+    def test(self,response):
+        temp = [i for i in response.text.split('\r\n') if i != '']
+        print(len(temp))
+        for i in range(1,10):
+            print([temp[i]])
+
 
     def nextPages(self,response,checkUrl = False):
         '''
@@ -60,10 +80,11 @@ class Wenku8netSpider(scrapy.Spider):
         :return:
         '''
         urlStr = 'https://www.wenku8.net/book/%s.htm'%str(int(response.url[28:-4]) + 1)
-        if checkUrl:
-            pass
+        # print('666')
+        if not checkUrl:
+            return urlStr
         else:
-            yield scrapy.Request(url=urlStr, callback=self.parse)
+            pass
 
     def xpathHandler(self,response,xpathStr):
         '''
