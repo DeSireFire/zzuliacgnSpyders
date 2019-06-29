@@ -5,7 +5,7 @@ import scrapy
 class Wenku8netSpider(scrapy.Spider):
     name = "wenku8Net"
     allowed_domains = ["wenku8.net", "wkcdn.com"]
-    start_urls = ['https://www.wenku8.net/book/20.htm']
+    start_urls = ['https://www.wenku8.net/book/2589.htm']
 
     # xpath 字典
     xpathDict = {
@@ -45,7 +45,25 @@ class Wenku8netSpider(scrapy.Spider):
         for m,n in self.reDict.items():
             firstDict[m] = self.reglux(response.text,n,False)[0]
 
+        # 判断是否正确获取小说信息
+        if firstDict['novelName'] != '暂时未知':
+            self.nextPages(response)    # 加载下一页
+        else:
+            pass
+
         print(firstDict)
+
+    def nextPages(self,response,checkUrl = False):
+        '''
+        翻页函数
+        :param checkUrl:布尔值，检查后几页是否也为 “文章不存在”
+        :return:
+        '''
+        urlStr = 'https://www.wenku8.net/book/%s.htm'%str(int(response.url[28:-4]) + 1)
+        if checkUrl:
+            pass
+        else:
+            yield scrapy.Request(url=urlStr, callback=self.parse)
 
     def xpathHandler(self,response,xpathStr):
         '''
