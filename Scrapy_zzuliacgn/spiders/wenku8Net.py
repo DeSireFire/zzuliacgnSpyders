@@ -5,7 +5,7 @@ import scrapy
 class Wenku8netSpider(scrapy.Spider):
     name = "wenku8Net"
     allowed_domains = ["wenku8.net", "wkcdn.com"]
-    start_urls = ['https://www.wenku8.net/book/2.htm']
+    start_urls = ['https://www.wenku8.net/book/256.htm']
 
     # xpath 字典
     xpathDict = {
@@ -56,9 +56,12 @@ class Wenku8netSpider(scrapy.Spider):
 
         # 判断是否正确获取小说信息
         if firstDict['novelName'] != '暂时未知':
-            yield scrapy.Request(url=urlDict['小说目录'], callback=self.directory, dont_filter= True) # 加载目录页
-        # yield scrapy.Request(url=self.nextPages(response), callback=self.parse) # 加载下一页
-        print(firstDict)
+            yield scrapy.Request(url=urlDict['小说目录'], callback=self.directory) # 加载目录页
+
+        # 加载下一页
+        _nextPage = self.nextPages(response)
+        if _nextPage:
+            yield scrapy.Request(url= _nextPage, callback=self.parse)
 
     def directory(self,response):
         temp = [i for i in response.text.split('\r\n') if i != '']
@@ -73,7 +76,7 @@ class Wenku8netSpider(scrapy.Spider):
             print([temp[i]])
 
 
-    def nextPages(self,response,checkUrl = False):
+    def nextPages(self,response):
         '''
         翻页函数
         :param checkUrl:布尔值，检查后几页是否也为 “文章不存在”
@@ -81,10 +84,10 @@ class Wenku8netSpider(scrapy.Spider):
         '''
         urlStr = 'https://www.wenku8.net/book/%s.htm'%str(int(response.url[28:-4]) + 1)
         # print('666')
-        if not checkUrl:
+        if int(response.url[28:-4]) + 1 < 2590:
             return urlStr
         else:
-            pass
+            return None
 
     def xpathHandler(self,response,xpathStr):
         '''
