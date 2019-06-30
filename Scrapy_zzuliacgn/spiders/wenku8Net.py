@@ -1,11 +1,12 @@
 # -*- coding: utf-8 -*-
-import scrapy
+import scrapy,random
 
 
 class Wenku8netSpider(scrapy.Spider):
     name = "wenku8Net"
     allowed_domains = ["wenku8.net", "wkcdn.com"]
-    start_urls = ['https://www.wenku8.net/book/256.htm']
+    # start_urls = ['https://www.wenku8.net/book/642.htm']
+    start_urls = ['https://www.wenku8.net/book/%s.htm'%random.randint(1,2589)]
 
     # xpath 字典
     xpathDict = {
@@ -64,10 +65,11 @@ class Wenku8netSpider(scrapy.Spider):
             yield scrapy.Request(url= _nextPage, callback=self.parse)
 
     def directory(self,response):
-        temp = [i for i in response.text.split('\r\n') if i != '']
+        temp = [i for i in response.text.split('\r\n') if i != '' or '    <td class="ccss">&nbsp;</td>' not in i]
         print(len(temp))
-        for i in temp[47:-19]:
+        for i in temp[59:-25]:
             print([i])
+        # //table[@class='css']/tbody/tr/td
 
     def test(self,response):
         temp = [i for i in response.text.split('\r\n') if i != '']
