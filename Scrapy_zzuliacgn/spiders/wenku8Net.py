@@ -5,8 +5,8 @@ import scrapy,random
 class Wenku8netSpider(scrapy.Spider):
     name = "wenku8Net"
     allowed_domains = ["wenku8.net", "wkcdn.com"]
-    start_urls = ['https://www.wenku8.net/book/1.htm']
-    # start_urls = ['https://www.wenku8.net/book/%s.htm'%random.randint(1,2589)]
+    # start_urls = ['https://www.wenku8.net/book/1.htm']
+    start_urls = ['https://www.wenku8.net/book/%s.htm'%random.randint(1,2589)]
 
     # xpath 字典
     xpathDict = {
@@ -17,6 +17,8 @@ class Wenku8netSpider(scrapy.Spider):
     }
     xpathDict2 = {
         '章节':"//tr/td",
+        '章节名':"//tr/td/a/text()",
+        '章节url':"//tr/td/a/@href",
     }
     # 正则 字典
     reDict = {
@@ -26,18 +28,6 @@ class Wenku8netSpider(scrapy.Spider):
         'intro': '<span class="hottext">内容简介：</span><br /><span style="font-size:14px;">([\s\S]*?)</span>',
     }
     def parse(self, response):
-        # firstDict = {
-        #     '书名':self.xpathHandler(response,self.xpathDict['书名'])[0],
-        #     '封面':self.xpathHandler(response,self.xpathDict['封面'])[0],
-        #     '文库分类':self.xpathHandler(response,self.xpathDict['文库分类'])[0][5:],
-        #     '作者名':self.xpathHandler(response,self.xpathDict['作者名'])[0][5:],
-        #     '文章状态':self.xpathHandler(response,self.xpathDict['文章状态'])[0][5:],
-        #     '最后更新':self.xpathHandler(response,self.xpathDict['最后更新'])[0][5:],
-        #     '全文字数':self.xpathHandler(response,self.xpathDict['全文字数'])[0][5:],
-        #     # '简介':max(self.xpathHandler(response,self.xpathDict['简介']), key=len),
-        #     '简介':self.reglux(response.text,self.reDict['简介'],False)[0],
-        # }
-
         firstDict = {
             'types_id': 14,
             'contents': '',
@@ -58,9 +48,20 @@ class Wenku8netSpider(scrapy.Spider):
 
         }
 
+        metaDict = {
+            'copyRight':False, # 是否存在版权问题
+            'urlDict':urlDict, # 用到的URL
+            'info':firstDict,   # 小说信息
+            'indexT':[],   # 卷名
+            'indexC':[],   # 章节名
+        }
+
+        if '版权问题' in response.text:
+            metaDict['copyRight'] = True
+
         # 判断是否正确获取小说信息
         if firstDict['novelName'] != '暂时未知':
-            yield scrapy.Request(url=urlDict['小说目录'], callback=self.directory) # 加载目录页
+            yield scrapy.Request(url=urlDict['小说目录'], callback=self.directory,meta=metaDict) # 加载目录页
 
         # 加载下一页
         # _nextPage = self.nextPages(response)
@@ -68,12 +69,31 @@ class Wenku8netSpider(scrapy.Spider):
         #     yield scrapy.Request(url= _nextPage, callback=self.parse)
 
     def directory(self,response):
-        # print(response.text)
-        a = [i for i in self.xpathHandler(response,self.xpathDict2['章节']) if '<td class="ccss">\xa0</td>' not in i]
-        # print(a)
-        # b = [i for i in self.xpathHandler(response,self.xpathDict2['章节']) if 'vcss' in i]
-        # print(b)
+        t = [] # 卷名列表
+        c = [] # 章节列表
+        for i in [i for i in self.xpathHandler(response,self.xpathDict2['章节']) if '<td class="ccss">\xa0</td>' not in i]:
+            if 'vcss' in i :
+                t.append(i[29:-5])
+                c.append([])
+            else:
+                temp = [i[26:-9].split('">')]
+                temp[0][0] = response.url.replace('index.htm',temp[0][0])
+                c[-1] += temp
 
+        metaDict = response.meta
+        metaDict['indexT'] = t
+        metaDict['indexC'] = c
+
+        for m,n in zip(t,c):
+            print(m,n)
+
+        # 根据版权下架选择采集方式
+        if response.meta['copyRight']:
+            print('直接爬取')
+            for m,n in zip(t,c):
+                print(m,n)
+        else:
+            print('No')
 
     def test(self,response):
         temp = [i for i in response.text.split('\r\n') if i != '']
