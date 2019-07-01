@@ -5,8 +5,8 @@ import scrapy,random
 class Wenku8netSpider(scrapy.Spider):
     name = "wenku8Net"
     allowed_domains = ["wenku8.net", "wkcdn.com"]
-    # start_urls = ['https://www.wenku8.net/book/642.htm']
-    start_urls = ['https://www.wenku8.net/book/%s.htm'%random.randint(1,2589)]
+    start_urls = ['https://www.wenku8.net/book/1.htm']
+    # start_urls = ['https://www.wenku8.net/book/%s.htm'%random.randint(1,2589)]
 
     # xpath 字典
     xpathDict = {
@@ -14,6 +14,9 @@ class Wenku8netSpider(scrapy.Spider):
         'headerImage':"//td//img[@vspace='0']/@src",
         'updateTime': "//div[@id='content']/div[1]//tr[2]/td[4]/text()",
         'resWorksNum':"//div[@id='content']/div[1]//tr[2]/td[5]/text()",
+    }
+    xpathDict2 = {
+        '章节':"//tr/td",
     }
     # 正则 字典
     reDict = {
@@ -60,22 +63,27 @@ class Wenku8netSpider(scrapy.Spider):
             yield scrapy.Request(url=urlDict['小说目录'], callback=self.directory) # 加载目录页
 
         # 加载下一页
-        _nextPage = self.nextPages(response)
-        if _nextPage:
-            yield scrapy.Request(url= _nextPage, callback=self.parse)
+        # _nextPage = self.nextPages(response)
+        # if _nextPage:
+        #     yield scrapy.Request(url= _nextPage, callback=self.parse)
 
     def directory(self,response):
-        temp = [i for i in response.text.split('\r\n') if i != '' or '    <td class="ccss">&nbsp;</td>' not in i]
-        print(len(temp))
-        for i in temp[59:-25]:
-            print([i])
-        # //table[@class='css']/tbody/tr/td
+        # print(response.text)
+        a = [i for i in self.xpathHandler(response,self.xpathDict2['章节']) if '<td class="ccss">\xa0</td>' not in i]
+        # print(a)
+        # b = [i for i in self.xpathHandler(response,self.xpathDict2['章节']) if 'vcss' in i]
+        # print(b)
+
 
     def test(self,response):
         temp = [i for i in response.text.split('\r\n') if i != '']
         print(len(temp))
         for i in range(1,10):
             print([temp[i]])
+        temp = [i for i in response.text.split('\r\n') if i != '' or '    <td class="ccss">&nbsp;</td>' not in i]
+        print(len(temp))
+        for i in temp[59:-25]:
+            print([i])
 
 
     def nextPages(self,response):
