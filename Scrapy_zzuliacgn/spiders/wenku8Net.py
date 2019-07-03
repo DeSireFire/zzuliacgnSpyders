@@ -84,20 +84,14 @@ class Wenku8netSpider(scrapy.Spider):
         metaDict['indexT'] = t
         metaDict['indexC'] = c
 
-        import chardet
-        jsonDict = {}
-        for m,n in zip(t,c):
-            jsonDict[m] = []
-            for x in n:
-                jsonDict[m].append({x[1]:x[0]})
-        print(jsonDict)
-
-        import json
-        print(str(jsonDict).replace("'",'"'))
-        print(json.loads(str(jsonDict).replace("'",'"')))
-        # print(json.dumps(jsonDict).encode('utf8'))
-        # print(type(json.dumps(jsonDict)))
-        # print(json.loads(json.dumps(jsonDict)))
+        # json格式验证
+        # jsonDict = {}
+        # for m,n in zip(t,c):
+        #     jsonDict[m] = []
+        #     for x in n:
+        #         jsonDict[m].append({x[1]:x[0]})
+        # import json
+        # print(json.loads(str(jsonDict).replace("'",'"')))
 
 
 
