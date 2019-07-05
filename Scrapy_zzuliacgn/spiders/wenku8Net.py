@@ -4,9 +4,9 @@ import scrapy,random
 
 class Wenku8netSpider(scrapy.Spider):
     name = "wenku8Net"
-    allowed_domains = ["wenku8.net", "wkcdn.com"]
-    # start_urls = ['https://www.wenku8.net/book/1.htm']
-    start_urls = ['https://www.wenku8.net/book/%s.htm'%random.randint(1,2589)]
+    allowed_domains = ["wenku8.net", "wkcdn.com", "wenku8.com"]
+    start_urls = ['https://www.wenku8.net/book/2.htm']
+    # start_urls = ['https://www.wenku8.net/book/%s.htm'%random.randint(1,2589)]
 
     # xpath 字典
     xpathDict = {
@@ -100,6 +100,12 @@ class Wenku8netSpider(scrapy.Spider):
         # 根据版权下架选择采集方式
         if response.meta['copyRight']:
             print('%s 版权下架小说'%response.url)
+            for m,n in zip(t,c):
+                for x in n:
+                    metaDict['nowT'] = m
+                    metaDict['nowC'] = x[1]
+                    url = metaDict['urlDict']['小说分卷']%(x[0][0:-4].split("/")[-1])
+                    yield scrapy.Request(url=url, callback=self.chapterCP, meta=metaDict)  # 加载目录页
 
         else:
             print('%s 非版权下架小说'%response.url)
@@ -115,11 +121,10 @@ class Wenku8netSpider(scrapy.Spider):
         pass
 
     def chapterCP(self,response):
-        pass
+        with open('Z:\%s_%s.txt' % (response.meta['nowT'],response.meta['nowC']), 'w', encoding='utf-8') as f:
+            f.write(response.text)
 
     def test(self,response):
-
-
         # 输出成文本
         with open('Z:\%s_%s.txt' % (response.meta['nowT'],response.meta['nowC']), 'w', encoding='utf-8') as f:
             for i in self.xpathHandler(response, "//div[@id='content']/text()"):
