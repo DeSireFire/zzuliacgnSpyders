@@ -19,6 +19,7 @@ class Wenku8netSpider(scrapy.Spider):
         '章节':"//tr/td",
         '章节名':"//tr/td/a/text()",
         '章节url':"//tr/td/a/@href",
+
     }
     # 正则 字典
     reDict = {
@@ -45,6 +46,7 @@ class Wenku8netSpider(scrapy.Spider):
                 num = str((novelId + 1)//1000),
                 id = str(novelId)),
             '小说全本':'http://dl.wenku8.com/down.php?type=utf8&id={id}'.format(id = novelId),
+            '小说分卷':'http://dl.wenku8.com/packtxt.php?aid={aid}&vid=%s&charset=utf-8'.format(aid = novelId),
 
         }
 
@@ -97,21 +99,40 @@ class Wenku8netSpider(scrapy.Spider):
 
         # 根据版权下架选择采集方式
         if response.meta['copyRight']:
-            print('直接爬取')
-            for m,n in zip(t,c):
-                print(m,n)
+            print('%s 版权下架小说'%response.url)
+
         else:
-            print('No')
+            print('%s 非版权下架小说'%response.url)
+            # 直接进入阅读页完成分章
+            for m,n in zip(t,c):
+                for x in n:
+                    metaDict['nowT'] = m
+                    metaDict['nowC'] = x[1]
+                    yield scrapy.Request(url=x[0], callback=self.chapter, meta=metaDict)  # 加载目录页
+
+
+    def chapter(self,response):
+        pass
+
+    def chapterCP(self,response):
+        pass
 
     def test(self,response):
-        temp = [i for i in response.text.split('\r\n') if i != '']
-        print(len(temp))
-        for i in range(1,10):
-            print([temp[i]])
-        temp = [i for i in response.text.split('\r\n') if i != '' or '    <td class="ccss">&nbsp;</td>' not in i]
-        print(len(temp))
-        for i in temp[59:-25]:
-            print([i])
+
+
+        # 输出成文本
+        with open('Z:\%s_%s.txt' % (response.meta['nowT'],response.meta['nowC']), 'w', encoding='utf-8') as f:
+            for i in self.xpathHandler(response, "//div[@id='content']/text()"):
+                f.write(i)
+
+        # temp = [i for i in response.text.split('\r\n') if i != '']
+        # print(len(temp))
+        # for i in range(1,10):
+        #     print([temp[i]])
+        # temp = [i for i in response.text.split('\r\n') if i != '' or '    <td class="ccss">&nbsp;</td>' not in i]
+        # print(len(temp))
+        # for i in temp[59:-25]:
+        #     print([i])
 
 
     def nextPages(self,response):
