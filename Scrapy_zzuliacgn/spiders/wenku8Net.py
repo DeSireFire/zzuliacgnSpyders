@@ -121,8 +121,13 @@ class Wenku8netSpider(scrapy.Spider):
         pass
 
     def chapterCP(self,response):
-        with open('Z:\%s_%s.txt' % (response.meta['nowT'],response.meta['nowC']), 'w', encoding='utf-8') as f:
-            f.write(response.text)
+
+        print([self.toUTF8(response)])
+        print(self.toUTF8(response).split())
+        # for i in self.toUTF8(response).split():
+        #     print([i])
+        # with open(r'Z:\testNovel\%s_%s.txt' % (response.meta['nowT'],response.meta['nowC']), 'w', encoding='utf-8') as f:
+        #     f.write(self.toUTF8(response))
 
     def test(self,response):
         # 输出成文本
@@ -139,6 +144,18 @@ class Wenku8netSpider(scrapy.Spider):
         # for i in temp[59:-25]:
         #     print([i])
 
+
+    def toUTF8(self,response):
+        '''
+        万能转码，基本能够解决多数编码问题
+        :param response:
+        :return:
+        '''
+        import chardet
+        code = chardet.detect(response.body)['encoding']
+        if code == "GB2312":
+            code = "GBK"
+        return response.body.decode(code)
 
     def nextPages(self,response):
         '''
