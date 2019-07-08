@@ -117,6 +117,8 @@ class Wenku8netSpider(scrapy.Spider):
         # print(temp[0].strip())# 章节名
         # print(temp[0:])# 章节正文内容列表
         # print(response.meta['nowC'])# 章节列表里对应的章节名
+
+        # 输出成文本保存
         tempPath = os.path.join('Z:', 'novel', response.meta['info']['novelName'], response.meta['nowT'])
         self.txtSave(response,temp,tempPath)
 
