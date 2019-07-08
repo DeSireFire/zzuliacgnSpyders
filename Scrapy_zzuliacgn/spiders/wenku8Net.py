@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
-import scrapy,random
-
+import scrapy,random,os.path
 
 class Wenku8netSpider(scrapy.Spider):
     name = "wenku8Net"
@@ -86,16 +85,6 @@ class Wenku8netSpider(scrapy.Spider):
         metaDict['indexT'] = t
         metaDict['indexC'] = c
 
-        # json格式验证
-        # jsonDict = {}
-        # for m,n in zip(t,c):
-        #     jsonDict[m] = []
-        #     for x in n:
-        #         jsonDict[m].append({x[1]:x[0]})
-        # import json
-        # print(json.loads(str(jsonDict).replace("'",'"')))
-
-
 
         # 根据版权下架选择采集方式
         if response.meta['copyRight']:
@@ -128,8 +117,8 @@ class Wenku8netSpider(scrapy.Spider):
         # print(temp[0].strip())# 章节名
         # print(temp[0:])# 章节正文内容列表
         # print(response.meta['nowC'])# 章节列表里对应的章节名
-
-        self.txtSave(response,temp)
+        tempPath = os.path.join('Z:', 'novel', response.meta['info']['novelName'], response.meta['nowT'])
+        self.txtSave(response,temp,tempPath)
 
     def test(self,response):
         # 输出成文本
@@ -146,23 +135,41 @@ class Wenku8netSpider(scrapy.Spider):
         # for i in temp[59:-25]:
         #     print([i])
 
-    def txtSave(self,response,textList):
+    def jsonCheck(self,titleList,chapterList):
+        '''
+        json格式验证
+        :param titleList: 卷名列表
+        :param chapterList: 章节名列表
+        :return:
+        '''
+        jsonDict = {}
+        for m,n in zip(titleList,chapterList):
+            jsonDict[m] = []
+            for x in n:
+                jsonDict[m].append({x[1]:x[0]})
+        import json
+        print(json.loads(str(jsonDict).replace("'",'"')))
+
+    def txtSave(self,response,textList,filePath):
         '''
         文本文件保存
         :return: 保存地址
         '''
-        import os.path
-        tempPath = os.path.join('Z:','novel',response.meta['info']['novelName'],response.meta['nowT'])
-        isExists = os.path.exists(tempPath)
+        isExists = os.path.exists(filePath)
         if not isExists:
             # 如果不存在则创建目录,创建目录操作函数
-            # os.mkdir(path)与os.makedirs(path)的区别是,当父目录不存在的时候os.mkdir(path)不会创建，os.makedirs(path)则会创建父目录
-            # 此处路径最好使用utf-8解码，否则在磁盘中可能会出现乱码的情况
-            os.makedirs(tempPath)
+            os.makedirs(filePath)
 
-        with open(os.path.join(tempPath,'%s_%s.txt'%(response.meta['nowT'],response.meta['nowC'])), 'w', encoding='utf-8') as f:
+        with open(os.path.join(filePath, '%s_%s.txt' % (response.meta['nowT'], response.meta['nowC'])), 'w',
+                  encoding='utf-8') as f:
             for i in textList[0:]:
-                f.write(i+'\r\n \r\n')
+                f.write(i + '\r\n \r\n')
+
+       # 验证文件是否保存成功
+        if os.path.exists(os.path.join(filePath,'%s_%s.txt'%(response.meta['nowT'],response.meta['nowC']))):
+            return os.path.exists(os.path.join(filePath,'%s_%s.txt'%(response.meta['nowT'],response.meta['nowC'])))
+        else:
+            return False
 
     def toUTF8(self,response):
         '''
