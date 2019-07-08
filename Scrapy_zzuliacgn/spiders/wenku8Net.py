@@ -5,7 +5,7 @@ import scrapy,random
 class Wenku8netSpider(scrapy.Spider):
     name = "wenku8Net"
     allowed_domains = ["wenku8.net", "wkcdn.com", "wenku8.com"]
-    start_urls = ['https://www.wenku8.net/book/2.htm']
+    start_urls = ['https://www.wenku8.net/book/14.htm']
     # start_urls = ['https://www.wenku8.net/book/%s.htm'%random.randint(1,2589)]
 
     # xpath 字典
@@ -122,12 +122,14 @@ class Wenku8netSpider(scrapy.Spider):
 
     def chapterCP(self,response):
 
-        print([self.toUTF8(response)])
-        print(self.toUTF8(response).split())
-        # for i in self.toUTF8(response).split():
-        #     print([i])
-        # with open(r'Z:\testNovel\%s_%s.txt' % (response.meta['nowT'],response.meta['nowC']), 'w', encoding='utf-8') as f:
-        #     f.write(self.toUTF8(response))
+        # 去除分卷文本开头特殊字符，切割章节，再切割换行，最后去除只含一个空格的元素，并生成列表
+        temp = [i for i in self.toUTF8(response)[34:].split('\r\n\r\n')[1].split('\r\n') if i != ' ']
+
+        # print(temp[0].strip())# 章节名
+        # print(temp[0:])# 章节正文内容列表
+        # print(response.meta['nowC'])# 章节列表里对应的章节名
+
+        self.txtSave(response,temp)
 
     def test(self,response):
         # 输出成文本
@@ -144,11 +146,27 @@ class Wenku8netSpider(scrapy.Spider):
         # for i in temp[59:-25]:
         #     print([i])
 
+    def txtSave(self,response,textList):
+        '''
+        文本文件保存
+        :return: 保存地址
+        '''
+        import os.path
+        tempPath = os.path.join('Z:','novel',response.meta['info']['novelName'],response.meta['nowT'])
+        isExists = os.path.exists(tempPath)
+        if not isExists:
+            # 如果不存在则创建目录,创建目录操作函数
+            # os.mkdir(path)与os.makedirs(path)的区别是,当父目录不存在的时候os.mkdir(path)不会创建，os.makedirs(path)则会创建父目录
+            # 此处路径最好使用utf-8解码，否则在磁盘中可能会出现乱码的情况
+            os.makedirs(tempPath)
+
+        with open(os.path.join(tempPath,'%s_%s.txt'%(response.meta['nowT'],response.meta['nowC'])), 'w', encoding='utf-8') as f:
+            for i in textList[0:]:
+                f.write(i+'\r\n \r\n')
 
     def toUTF8(self,response):
         '''
         万能转码，基本能够解决多数编码问题
-        :param response:
         :return:
         '''
         import chardet
