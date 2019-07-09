@@ -4,8 +4,8 @@ import scrapy,random,os.path
 class Wenku8netSpider(scrapy.Spider):
     name = "wenku8Net"
     allowed_domains = ["wenku8.net", "wkcdn.com", "wenku8.com"]
-    start_urls = ['https://www.wenku8.net/book/14.htm']
-    # start_urls = ['https://www.wenku8.net/book/%s.htm'%random.randint(1,2589)]
+    # start_urls = ['https://www.wenku8.net/book/14.htm']
+    start_urls = ['https://www.wenku8.net/book/%s.htm'%random.randint(1,2589)]
 
     # xpath 字典
     xpathDict = {
@@ -107,7 +107,11 @@ class Wenku8netSpider(scrapy.Spider):
 
 
     def chapter(self,response):
-        pass
+
+        print(response.meta['nowT'])
+        print(response.meta['nowC'])
+        temp = [i.strip() for i in self.xpathHandler(response,"//div[@id='content']/text()") if i.strip() != '']
+        print(temp)
 
     def chapterCP(self,response):
 
